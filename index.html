@@ -12,7 +12,7 @@
   <link rel="preload" href="caa.ttf" as="font" type="font/ttf" crossorigin>
 
   <style>
-    /* 커스텀 폰트 정의 */
+    /* 1) 커스텀 폰트 정의 */
     @font-face {
       font-family: 'HJSS';
       src: url('./HJSS.ttf') format('truetype');
@@ -35,111 +35,124 @@
     }
 
     body {
-      margin:0; padding:0;
-      font-family:'HJSS',sans-serif;
-      background:#f5f5f5;
+      margin: 0; padding: 0;
+      font-family: 'HJSS', sans-serif;
+      background: #f5f5f5;
     }
     .sidebar {
-      position:fixed; top:0; left:0; bottom:0;
-      width:16rem; background:#fff; overflow:auto;
-      box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1rem;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 16rem; background: #fff; overflow: auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 1rem;
     }
     .main {
-      margin-left:16rem; padding:1rem;
+      margin-left: 16rem; padding: 1rem;
     }
+
     .nav-btns {
-      display:flex; justify-content:center; gap:0.5rem;
-      margin:0.5rem 0; white-space:nowrap;
+      display: flex; justify-content: center; gap: 0.5rem;
+      margin: 0.5rem 0; white-space: nowrap;
     }
     .nav-btns button {
-      background:#fff; border:none;
-      padding:0.5rem 1rem; cursor:pointer;
+      background: #fff; border: none;
+      padding: 0.5rem 1rem; cursor: pointer;
     }
+
     .toggle-btn {
-      margin:1rem 0;
-      width:100%; padding:0.5rem;
-      border:none; background:#fff;
-      cursor:pointer; font-weight:bold;
-      border-radius:0.25rem; white-space:nowrap;
+      margin: 1rem 0;
+      width: 100%; padding: 0.5rem;
+      border: none; background: #fff;
+      cursor: pointer; font-weight: bold;
+      border-radius: 0.25rem; white-space: nowrap;
     }
+
     .calendar {
-      display:grid;
-      grid-template-columns:repeat(7,1fr);
-      gap:0.25rem; font-size:0.875rem;
+      display: grid;
+      grid-template-columns: repeat(7,1fr);
+      gap: 0.25rem; font-size: 0.875rem;
     }
     .calendar-day {
-      text-align:center; font-weight:500;
+      text-align: center; font-weight: 500;
     }
     .calendar-date {
-      width:1.8rem; height:1.8rem;
-      display:flex; align-items:center; justify-content:center;
-      background:#fff; border:none; border-radius:9999px;
-      cursor:pointer; transition:background 0.2s;
+      width: 1.8rem; height: 1.8rem;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff; border: none; border-radius: 9999px;
+      cursor: pointer; transition: background 0.2s;
     }
-    /* 1) has-record도 원형 음영 유지 */
+    /* 1) 네모로 변했던 has-record를 다시 완전 원형 음영으로 */
     .calendar-date.has-record {
       background: var(--highlight-color,#888)33;
       border-radius: 9999px;
     }
     .calendar-date.highlight {
       background: var(--highlight-color,#888);
-      color:#fff;
+      color: #fff;
     }
 
     .note-area, .summary-area {
-      max-width:42rem; background:#fff;
-      border-radius:0.5rem;
-      box-shadow:0 2px 5px rgba(0,0,0,0.1);
-      padding:1.5rem; margin:0 auto;
+      max-width: 42rem; background: #fff;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 1.5rem; margin: 0 auto;
     }
-    .section { margin-bottom:1rem; }
-    .section h2 { font-size:1.25rem; margin-bottom:0.5rem; }
+    .section { margin-bottom: 1rem; }
+    .section h2 {
+      font-size: 1.25rem; margin-bottom: 0.5rem;
+    }
 
-    /* 입력 시 폰트 적용 */
+    /* 2) 모닝/감사 일기 input과 saved-text 모두 커스텀 폰트 적용 */
     textarea {
-      width:100%; padding:0.5rem;
-      border:1px solid #ccc; border-radius:0.25rem;
-      resize:vertical;
+      width: 100%; padding: 0.5rem;
+      border: 1px solid #ccc; border-radius: 0.25rem;
+      resize: vertical;
       font-family: inherit;
-      font-size:1rem; line-height:1.4;
+      font-size: 1rem; line-height: 1.4;
     }
-
-    /* 고정 텍스트는 2pt 작게 */
     .saved-text {
       font-family: inherit;
     }
+    /* 3) 고정된 텍스트 크기를 input보다 2pt 작게 */
     .saved-text p {
-      margin:0.25rem 0;
-      font-size:0.875rem; line-height:1.4;
+      margin: 0.25rem 0;
+      font-size: 0.875rem;
+      line-height: 1.4;
     }
 
     .color-picker {
-      width:1.5rem; height:1.5rem; border:none;
-      cursor:pointer; margin-bottom:1rem;
+      width: 1.5rem; height: 1.5rem; border: none;
+      cursor: pointer; margin-bottom: 1rem;
     }
-    .font-select { margin-bottom:1rem; }
+    .font-select {
+      margin-bottom: 1rem;
+    }
 
-    /* MoodTracker 이모지 중앙 */
+    /* MoodTracker 이모지 버튼 중앙 정렬 */
     .mood-tracker {
-      display:flex; gap:0.5rem; margin-bottom:1rem;
+      display: flex; gap: 0.5rem; margin-bottom: 1rem;
     }
     .mood-tracker button {
-      width:2rem; height:2rem; padding:0;
-      display:flex; align-items:center; justify-content:center;
-      font-size:1.25rem; line-height:1;
-      border:1px solid #ccc; border-radius:0.25rem;
-      background:transparent; cursor:pointer;
-      transition:border-color 0.2s, background 0.2s;
+      width: 2rem; height: 2rem; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; line-height: 1;
+      border: 1px solid #ccc; border-radius: 0.25rem;
+      background: transparent; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
     }
 
-    /* export 영역 폰트 크기 고정 */
+    /* Export 이미지 영역 텍스트 축소 */
     .export-region {
-      background:#fff; border-radius:0.5rem;
-      padding:2rem; font-family:inherit;
-      font-size:0.875rem; /* 고정 텍스트 크기 */
+      background: #fff; border-radius: 0.5rem;
+      padding: 2rem; font-family: inherit;
+      font-size: 0.875rem; /* 내보낸 이미지 폰트 크기 줄이기 */
+      line-height: 1.4;
     }
-    .export-header { text-align:center; margin-bottom:1rem; }
-    .export-header p { margin:0.25rem 0; font-weight:bold; }
+    .export-header {
+      text-align: center; margin-bottom: 1rem;
+    }
+    .export-header p {
+      margin: 0.25rem 0; font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -153,15 +166,16 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script type="text/babel">
-    // FontFace API 로드
+    // FontFace API로 TTF 로드
     (async()=>{
       for(const f of ['HJSS','bbang','ywoo','caa']){
-        const face=new FontFace(f,`url(${f}.ttf)`);
+        const face = new FontFace(f, `url(${f}.ttf)`);
         await face.load();
         document.fonts.add(face);
       }
     })();
 
+    // Firebase 초기화
     const firebaseConfig = {
       apiKey: "AIzaSyBbM_NytZTqJSTPU74A9qYSskQ0GgXWtgw",
       authDomain: "nagi-daily.firebaseapp.com",
@@ -174,27 +188,27 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    function MoodTracker({dateKey,highlightColor}){
-      const [mood,setMood]=React.useState('');
-      React.useEffect(()=>{
-        const ref=database.ref(`pages/${dateKey}/mood`);
-        const off=ref.on('value',snap=>setMood(snap.val()||''));
-        return()=>ref.off('value',off);
-      },[dateKey]);
-      const labels={happy:'😻',neutral:'😺',sad:'😿',angry:'😾',excited:'✨'};
-      return(
+    function MoodTracker({ dateKey, highlightColor }) {
+      const [mood, setMood] = React.useState('');
+      React.useEffect(() => {
+        const ref = database.ref(`pages/${dateKey}/mood`);
+        const off = ref.on('value', snap => setMood(snap.val()||''));
+        return () => ref.off('value', off);
+      }, [dateKey]);
+      const labels = { happy:'😻', neutral:'😺', sad:'😿', angry:'😾', excited:'✨' };
+      return (
         <div className="mood-tracker">
-          {Object.entries(labels).map(([key,emoji])=>{
-            const sel=mood===key;
-            return(
+          {Object.entries(labels).map(([key, emoji]) => {
+            const sel = mood===key;
+            return (
               <button key={key}
                 onClick={()=>{
-                  const next=sel?'':key;
+                  const next = sel ? '' : key;
                   database.ref(`pages/${dateKey}/mood`).set(next);
                 }}
                 style={{
-                  background:sel?highlightColor:'transparent',
-                  borderColor:sel?highlightColor:'#ccc'
+                  background: sel?highlightColor:'transparent',
+                  borderColor: sel?highlightColor:'#ccc'
                 }}>
                 {emoji}
               </button>
@@ -204,65 +218,66 @@
       );
     }
 
-    function NoteArea({dateKey,selectedDate,highlightColor,onColorChange}){
-      const [morning,setMorning]=React.useState('');
-      const [gratitude,setGratitude]=React.useState('');
-      const [editM,setEditM]=React.useState(false);
-      const [editG,setEditG]=React.useState(false);
-      const [font,setFont]=React.useState('HJSS');
+    function NoteArea({ dateKey, selectedDate, highlightColor, onColorChange }) {
+      const [morning, setMorning] = React.useState('');
+      const [gratitude, setGratitude] = React.useState('');
+      const [editM, setEditM] = React.useState(false);
+      const [editG, setEditG] = React.useState(false);
+      const [font, setFont] = React.useState('HJSS');
 
-      React.useEffect(()=>{
-        const m=database.ref(`pages/${dateKey}/morning`);
-        const g=database.ref(`pages/${dateKey}/gratitude`);
-        m.on('value',snap=>{
-          const v=snap.val()||'';
-          setMorning(v); setEditM(v==='');
+      React.useEffect(() => {
+        const mRef = database.ref(`pages/${dateKey}/morning`);
+        const gRef = database.ref(`pages/${dateKey}/gratitude`);
+        mRef.on('value', snap => {
+          const v = snap.val()||'';
+          setMorning(v); setEditM(v==='' );
         });
-        g.on('value',snap=>{
-          const v=snap.val()||'';
-          setGratitude(v); setEditG(v==='');
+        gRef.on('value', snap => {
+          const v = snap.val()||'';
+          setGratitude(v); setEditG(v==='' );
         });
-        return()=>{ m.off(); g.off(); };
-      },[dateKey]);
+        return ()=>{ mRef.off(); gRef.off(); };
+      }, [dateKey]);
 
-      const handleKey=(e,text,setFn,path,setEdit)=>{
-        if(e.key==='Enter'&&!e.shiftKey){
+      const handleKey = (e, text, setFn, path, setEdit) => {
+        if(e.key==='Enter' && !e.shiftKey) {
           e.preventDefault();
           database.ref(path).set(text);
           setEdit(false);
         }
       };
 
-      const exportImage=async()=>{
+      const exportImage = async () => {
         if(typeof html2canvas!=='function'){
           alert('html2canvas 로드 실패');
           return;
         }
         await document.fonts.load(`1em ${font}`);
         await document.fonts.ready;
-        const el=document.querySelector('.export-region');
-        const canvas=await html2canvas(el,{
-          backgroundColor:'#fff',
-          scale:2,
-          useCORS:true
+        const el = document.querySelector('.export-region');
+        const canvas = await html2canvas(el, {
+          backgroundColor: '#fff',
+          scale: 2,
+          useCORS: true
         });
-        canvas.toBlob(blob=>{
-          const a=document.createElement('a');
-          a.href=URL.createObjectURL(blob);
-          a.download=`daily-${dateKey}.png`;
+        canvas.toBlob(blob => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `daily-${dateKey}.png`;
           a.click();
         });
       };
 
-      const y=selectedDate.getFullYear();
-      const mo=String(selectedDate.getMonth()+1).padStart(2,'0');
-      const d=String(selectedDate.getDate()).padStart(2,'0');
-      const wd=selectedDate.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
-      const displayDate=`${y}.${mo}.${d}. (${wd})`;
+      const y = selectedDate.getFullYear();
+      const mo = String(selectedDate.getMonth()+1).padStart(2,'0');
+      const d  = String(selectedDate.getDate()).padStart(2,'0');
+      const wd = selectedDate.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
+      const displayDate = `${y}.${mo}.${d}. (${wd})`;
 
-      return(
+      return (
         <div className="note-area" style={{fontFamily:font}}>
-          <select className="font-select" value={font} onChange={e=>setFont(e.target.value)}>
+          <select className="font-select" value={font}
+                  onChange={e=>setFont(e.target.value)}>
             <option value="HJSS">HJSS</option>
             <option value="ywoo">ywoo</option>
             <option value="bbang">bbang</option>
@@ -273,9 +288,7 @@
             onChange={e=>onColorChange(e.target.value)} />
 
           <div className="export-region" style={{fontFamily:font}}>
-            <div className="export-header">
-              <p>{displayDate}</p>
-            </div>
+            <div className="export-header"><p>{displayDate}</p></div>
 
             <div className="section">
               <h2 style={{color:highlightColor}}>ᴍᴏʀɴɪɴɢ</h2>
@@ -284,12 +297,11 @@
                     onChange={e=>setMorning(e.target.value)}
                     onKeyDown={e=>handleKey(e,morning,setMorning,
                                              `pages/${dateKey}/morning`,setEditM)}
-                    style={{borderColor:highlightColor,fontFamily:font}}
                   />
-                : <div className="saved-text" onDoubleClick={()=>setEditM(true)}>
+                : <div className="saved-text"
+                      onDoubleClick={()=>setEditM(true)}>
                     {morning.split('\n').map((ln,i)=><p key={i}>{ln}</p>)}
-                  </div>
-              }
+                  </div>}
             </div>
 
             <MoodTracker dateKey={dateKey} highlightColor={highlightColor} />
@@ -301,12 +313,11 @@
                     onChange={e=>setGratitude(e.target.value)}
                     onKeyDown={e=>handleKey(e,gratitude,setGratitude,
                                              `pages/${dateKey}/gratitude`,setEditG)}
-                    style={{borderColor:highlightColor,fontFamily:font}}
                   />
-                : <div className="saved-text" onDoubleClick={()=>setEditG(true)}>
+                : <div className="saved-text"
+                      onDoubleClick={()=>setEditG(true)}>
                     {gratitude.split('\n').map((ln,i)=><p key={i}>{ln}</p>)}
-                  </div>
-              }
+                  </div>}
             </div>
           </div>
 
@@ -323,8 +334,8 @@
       );
     }
 
-    function MonthlySummary({year,month}){
-      const [counts,setCounts]=React.useState(null);
+    function MonthlySummary({ year, month }) {
+      const [counts,setCounts] = React.useState(null);
       React.useEffect(()=>{
         database.ref('pages').once('value',snap=>{
           const data=snap.val()||{};
@@ -332,7 +343,7 @@
           Object.entries(data).forEach(([day,val])=>{
             const dt=new Date(day);
             if(dt.getFullYear()===year&&dt.getMonth()===month&&val.mood){
-              mc[val.mood]=(mc[val.mood]||0)+1;
+              mc[val.mood] = (mc[val.mood]||0)+1;
             }
           });
           setCounts(mc);
@@ -350,7 +361,7 @@
     }
 
     function DiscordBotWidget(){
-      /* 기존 구현 그대로 */
+      /* 기존 구현 유지 */
     }
 
     function App(){
@@ -382,11 +393,15 @@
       const dayCount=new Date(year,month+1,0).getDate();
       const weekdays=['S','M','T','W','T','F','S'];
 
-      return(
+      return (
         <>
           <div style={{display:'flex'}}>
             <div className="sidebar">
-              <h2 style={{textAlign:'center',whiteSpace:'pre-line',marginBottom:'1rem'}}>
+              <h2 style={{
+                textAlign:'center',
+                whiteSpace:'pre-line',
+                marginBottom:'1rem'
+              }}>
                 {year}{'\n'}{selectedDate.toLocaleDateString('en-US',{month:'long'})}
               </h2>
               <div className="nav-btns">
@@ -399,12 +414,12 @@
                 {view==='daily'?'🇲 🇴 🇳 🇹 🇭 🇱 🇾':'🇷 🇪 🇹 🇺 🇷 🇳'}
               </button>
               <div className="calendar" style={{'--highlight-color':highlightColor}}>
-                {weekdays.map((d,i)=>
+                {weekdays.map((d,i)=>(
                   <div key={i} className="calendar-day"
                     style={{color:i===0?'#8A4545':i===6?'#434A8E':'#666'}}>
                     {d}
                   </div>
-                )}
+                ))}
                 {Array(firstDay).fill().map((_,i)=><div key={`e${i}`}/>)}
                 {Array.from({length:dayCount}).map((_,i)=>{
                   const dt=new Date(year,month,i+1);
@@ -412,9 +427,9 @@
                   const sel=key===dateKey;
                   const rec=Boolean(allPages[key]);
                   const cls=['calendar-date',sel?'highlight':'',!sel&&rec?'has-record':''].join('');
-                  return(
+                  return (
                     <button key={i} className={cls}
-                      onClick={()=>{setSelectedDate(dt);setView('daily');}}>
+                      onClick={()=>{ setSelectedDate(dt); setView('daily'); }}>
                       {i+1}
                     </button>
                   );
