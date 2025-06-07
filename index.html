@@ -11,44 +11,91 @@
     @font-face { font-family:'caa'; src:url('./caa.ttf') format('truetype'); }
 
     body { margin:0; padding:0; font-family:'HJSS',sans-serif; background:#f5f5f5; }
-    .sidebar { position:fixed; left:0; top:0; bottom:0; width:16rem; background:#fff; overflow:auto;
-      box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1rem; }
-    .main { margin-left:16rem; padding:1rem; display:flex; justify-content:center; }
+    .sidebar {
+      position:fixed; left:0; top:0; bottom:0; width:16rem;
+      background:#fff; overflow:auto;
+      box-shadow:0 2px 5px rgba(0,0,0,0.1);
+      padding:1rem;
+    }
+    .main {
+      margin-left:16rem; padding:1rem;
+      /* display:flex 제거 → 블록 가운데 정렬만 사용 */
+    }
 
-    .nav-btns { display:flex; justify-content:center; gap:0.5rem; margin:0.5rem 0; white-space:nowrap; }
-    .nav-btns button { background:#fff; border:none; padding:0.5rem 1rem; cursor:pointer; }
-    .toggle-btn { margin:1rem 0; width:100%; padding:0.5rem; border:none; background:#fff;
-      cursor:pointer; font-weight:bold; border-radius:0.25rem; white-space:nowrap; }
+    .nav-btns {
+      display:flex; justify-content:center; gap:0.5rem;
+      margin:0.5rem 0; white-space:nowrap;
+    }
+    .nav-btns button {
+      background:#fff; border:none;
+      padding:0.5rem 1rem; cursor:pointer;
+    }
 
-    .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:0.25rem; font-size:0.875rem; }
+    .toggle-btn {
+      margin:1rem 0; width:100%; padding:0.5rem;
+      border:none; background:#fff;
+      cursor:pointer; font-weight:bold;
+      border-radius:0.25rem; white-space:nowrap;
+    }
+
+    .calendar {
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:0.25rem; font-size:0.875rem;
+    }
     .calendar-day { text-align:center; font-weight:500; }
-    .calendar-date { position:relative; width:1.8rem; height:1.8rem; display:flex;
-      align-items:center; justify-content:center; background:#fff; border:none;
-      border-radius:9999px; cursor:pointer; transition:background 0.2s; }
-    .calendar-date.has-record { background: var(--highlight-color,#888)33; }
-    .calendar-date.highlight { background: var(--highlight-color,#888); color:#fff; }
+    .calendar-date {
+      width:1.8rem; height:1.8rem;
+      display:flex; align-items:center; justify-content:center;
+      background:#fff; border:none;
+      border-radius:9999px;
+      cursor:pointer; transition:background 0.2s;
+    }
+    .calendar-date.has-record {
+      background: var(--highlight-color,#888)33;
+      border-radius:9999px;
+    }
+    .calendar-date.highlight {
+      background: var(--highlight-color,#888);
+      color:#fff;
+    }
 
-    .note-area { max-width:42rem; background:#fff; border-radius:0.5rem;
-      box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1.5rem; margin:0 auto; }
+    .note-area, .summary-area {
+      max-width:42rem; background:#fff;
+      border-radius:0.5rem;
+      box-shadow:0 2px 5px rgba(0,0,0,0.1);
+      padding:1.5rem; margin:0 auto;
+    }
+
     .section { margin-bottom:1rem; }
     .section h2 { font-size:1.25rem; margin-bottom:0.5rem; }
 
-    textarea { width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:0.25rem; resize:vertical; }
-    .color-picker { width:1.5rem; height:1.5rem; border:none; cursor:pointer; margin-bottom:1rem; }
+    textarea {
+      width:100%; padding:0.5rem; border:1px solid #ccc;
+      border-radius:0.25rem; resize:vertical;
+      font-family: inherit;
+    }
+    .color-picker {
+      width:1.5rem; height:1.5rem; border:none;
+      cursor:pointer; margin-bottom:1rem;
+    }
     .font-select { margin-bottom:1rem; }
     .saved-text p { margin:0.25rem 0; }
 
     .mood-tracker button {
-      font-size:1.5rem; padding:0.25rem; border:1px solid #ccc; border-radius:0.25rem;
-      background:transparent; cursor:pointer; transition:border-color 0.2s, background 0.2s;
+      font-size:1.5rem; padding:0.25rem;
+      border:1px solid #ccc; border-radius:0.25rem;
+      background:transparent; cursor:pointer;
+      transition:border-color 0.2s, background 0.2s;
     }
 
-    .export-region { /* Export 대상만 캡처 */
-      font-family: inherit; /* 폰트 선택 반영 */
+    .export-region {
+      background:#fff; border-radius:0.5rem;
+      padding:2rem; /* 충분한 안쪽 여백 */
+      font-family: inherit;
     }
     .export-header { text-align:center; margin-bottom:1rem; }
     .export-header p { margin:0.25rem 0; font-weight:bold; }
-    /* Export 버튼·설정 UI는 .export-region 밖에 있어 이미지에 포함되지 않습니다 */
   </style>
 </head>
 <body>
@@ -62,7 +109,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script type="text/babel">
-    // Firebase 초기화 :contentReference[oaicite:2]{index=2}
+    // Firebase 초기화
     const firebaseConfig = {
       apiKey: "AIzaSyBbM_NytZTqJSTPU74A9qYSskQ0GgXWtgw",
       authDomain: "nagi-daily.firebaseapp.com",
@@ -75,6 +122,7 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // 감정 선택기
     function MoodTracker({ dateKey, highlightColor }) {
       const [mood, setMood] = React.useState('');
       React.useEffect(() => {
@@ -82,6 +130,7 @@
         const off = ref.on('value', snap => setMood(snap.val() || ''));
         return () => ref.off('value', off);
       }, [dateKey]);
+
       const labels = { happy:'😻', neutral:'😺', sad:'😿', angry:'😾', excited:'✨' };
       return (
         <div className="mood-tracker">
@@ -105,6 +154,7 @@
       );
     }
 
+    // 모닝/감사 일기
     function NoteArea({ dateKey, selectedDate, highlightColor, onColorChange }) {
       const [morning, setMorning] = React.useState('');
       const [gratitude, setGratitude] = React.useState('');
@@ -127,7 +177,7 @@
       }, [dateKey]);
 
       const handleKeyDown = (e, text, setFn, path, setEdit) => {
-        if (e.key==='Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           database.ref(path).set(text);
           setEdit(false);
@@ -135,7 +185,6 @@
       };
 
       const exportImage = async () => {
-        // 폰트 로드 대기
         await document.fonts.ready;
         const el = document.querySelector('.export-region');
         const canvas = await html2canvas(el, { backgroundColor:'#fff', scale:2 });
@@ -147,17 +196,17 @@
         });
       };
 
-      // 날짜/요일 표시 문자열 (기본: YYYY-MM-DD (Sat))
+      // 날짜/요일
       const y = selectedDate.getFullYear(),
-            m = String(selectedDate.getMonth()+1).padStart(2,'0'),
-            d = String(selectedDate.getDate()).padStart(2,'0'),
+            mo = String(selectedDate.getMonth()+1).padStart(2,'0'),
+            d  = String(selectedDate.getDate()).padStart(2,'0'),
             wd = selectedDate.toLocaleDateString('en-US',{weekday:'short'});
-      const displayDate = `${y}-${m}-${d} (${wd})`;
+      const displayDate = `${y}-${mo}-${d} (${wd})`;
 
       return (
         <div className="note-area" style={{ fontFamily: font }}>
           {/* 설정 UI */}
-          <select className="font-select" value={font} onChange={e=>setFont(e.target.value)}>
+          <select value={font} className="font-select" onChange={e=>setFont(e.target.value)}>
             <option value="HJSS">HJSS</option>
             <option value="ywoo">ywoo</option>
             <option value="bbang">bbang</option>
@@ -166,24 +215,20 @@
           <input type="color" className="color-picker" value={highlightColor}
             onChange={e=>onColorChange(e.target.value)} />
 
-          {/* Export 대상 영역 */}
-          <div className="export-region">
-            <div className="export-header">
-              <p>{displayDate}</p>
-            </div>
+          {/* 캡처 대상 */}
+          <div className="export-region" style={{ fontFamily: font }}>
+            <div className="export-header"><p>{displayDate}</p></div>
             <div className="section">
               <h2 style={{ color: highlightColor }}>ᴍᴏʀɴɪɴɢ</h2>
               {editMorning
                 ? <textarea rows={4} value={morning}
                     onChange={e=>setMorning(e.target.value)}
-                    onKeyDown={e=>
-                      handleKeyDown(e, morning, setMorning,
-                                    `pages/${dateKey}/morning`,
-                                    setEditMorning)}
+                    onKeyDown={e=>handleKeyDown(e, morning, setMorning,
+                                               `pages/${dateKey}/morning`,
+                                               setEditMorning)}
                     style={{ borderColor: highlightColor }}
-                    placeholder="모닝페이지를 입력하세요" />
-                : <div className="saved-text" style={{ cursor:'pointer' }}
-                    onDoubleClick={()=>setEditMorning(true)}>
+                    placeholder="모닝페이지" />
+                : <div className="saved-text" onDoubleClick={()=>setEditMorning(true)}>
                     {morning.split('\n').map((line,i)=><p key={i}>{line}</p>)}
                   </div>
               }
@@ -194,21 +239,18 @@
               {editGratitude
                 ? <textarea rows={4} value={gratitude}
                     onChange={e=>setGratitude(e.target.value)}
-                    onKeyDown={e=>
-                      handleKeyDown(e, gratitude, setGratitude,
-                                    `pages/${dateKey}/gratitude`,
-                                    setEditGratitude)}
+                    onKeyDown={e=>handleKeyDown(e, gratitude, setGratitude,
+                                               `pages/${dateKey}/gratitude`,
+                                               setEditGratitude)}
                     style={{ borderColor: highlightColor }}
-                    placeholder="감사일기를 입력하세요" />
-                : <div className="saved-text" style={{ cursor:'pointer' }}
-                    onDoubleClick={()=>setEditGratitude(true)}>
+                    placeholder="감사일기" />
+                : <div className="saved-text" onDoubleClick={()=>setEditGratitude(true)}>
                     {gratitude.split('\n').map((line,i)=><p key={i}>{line}</p>)}
                   </div>
               }
             </div>
           </div>
 
-          {/* 이미지 내보내기 */}
           <button onClick={exportImage}
             style={{
               marginTop:'1rem', padding:'.5rem',
@@ -222,6 +264,7 @@
       );
     }
 
+    // 월별 요약
     function MonthlySummary({ year, month }) {
       const [counts, setCounts] = React.useState(null);
       React.useEffect(() => {
@@ -236,26 +279,28 @@
           });
           setCounts(mc);
         });
-      },[year,month]);
-      if(!counts) return <div className="summary-area"><p>로딩 중…</p></div>;
+      }, [year,month]);
+      if(!counts) return <div className="summary-area"><p> 🇳 🇴 🇼  🇱 🇴 🇦 🇩 🇮 🇳 🇬 ...</p></div>;
       const labels={happy:'😻',neutral:'😺',sad:'😿',angry:'😾',excited:'✨'};
       return (
         <div className="summary-area">
           {Object.entries(labels).map(([k,emoji])=>(
-            <p key={k}>{emoji} : {counts[k]||0}</p>
+            <p key={k}>{emoji} {counts[k]||0}</p>
           ))}
         </div>
       );
     }
 
+    // DiscordBotWidget
     function DiscordBotWidget() {
       const [isVisible,setIsVisible]=React.useState(false);
       const [lastMessage,setLastMessage]=React.useState('');
       const [isOnline,setIsOnline]=React.useState(false);
       const isFocusTime=()=>{
-        const now=new Date(),day=now.getDay(),hour=now.getHours();
+        const now=new Date(), day=now.getDay(), hour=now.getHours();
         const ranges={1:[6,13],2:[6,18],3:[6,13],4:[6,18],5:[6,21]};
-        const r=ranges[day]; return r&&hour>=r[0]&&hour<r[1];
+        const r=ranges[day];
+        return r&&hour>=r[0]&&hour<r[1];
       };
       React.useEffect(()=>{
         const updateStatus=async()=>{
@@ -265,26 +310,26 @@
               const res=await fetch("https://raw.githubusercontent.com/nagi-00/nagi-todo/main/demian_focus_messages.json");
               const data=await res.json();
               setLastMessage(data.messages[Math.floor(Math.random()*data.messages.length)]);
-            }catch{setLastMessage("메시지를 불러오지 못했어.");}
+            }catch{ setLastMessage("메시지를 불러오지 못했어."); }
           }
         };
         updateStatus(); const timer=setInterval(updateStatus,60000);
         return()=>clearInterval(timer);
-      },[]);
+      }, []);
       return(<>
         <div onClick={()=>setIsVisible(v=>!v)} style={{
-          position:'fixed',bottom:'20px',right:'20px',width:'60px',height:'60px',
-          borderRadius:'50%',background:isOnline?'#CECECE':'#ccc',
-          display:'flex',alignItems:'center',justifyContent:'center',
-          cursor:'pointer',zIndex:1000
+          position:'fixed', bottom:'20px', right:'20px', width:'60px', height:'60px',
+          borderRadius:'50%', background:isOnline?'#CECECE':'#ccc',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          cursor:'pointer', zIndex:1000
         }}>
           <span style={{fontSize:'24px',color:'#fff'}}>🖤</span>
         </div>
         {isVisible&&(
           <div style={{
-            position:'fixed',bottom:'100px',right:'20px',width:'300px',
-            background:'#fff',borderRadius:'15px',padding:'20px',
-            boxShadow:'0 8px 25px rgba(0,0,0,0.15)',zIndex:999
+            position:'fixed', bottom:'100px', right:'20px', width:'300px',
+            background:'#fff', borderRadius:'15px', padding:'20px',
+            boxShadow:'0 8px 25px rgba(0,0,0,0.15)', zIndex:999
           }}>
             {isOnline?(
               <>
@@ -292,11 +337,11 @@
                 <div style={{fontSize:'14px',color:'#333'}}>{lastMessage}</div>
               </>
             ):(
-              <>
+              <>          
                 <div style={{textAlign:'center',color:'#888',fontSize:'14px'}}>😴 휴식의 시간이야.</div>
                 <div style={{fontSize:'12px',marginTop:'8px',textAlign:'center'}}>
                   𝗙𝗼𝗰𝘂𝘀 𝗧𝗶𝗺𝗲<br/>
-                  M (06-13)<br/>T (06-18)<br/>W (06-13)<br/>T (06-18)<br/>F (06-21)<br/>
+                  M (06-13)<br/>T (06-18)<br/>W (06-13)<br/>T (06-18)<br/>F (06-21)
                 </div>
               </>
             )}
@@ -305,6 +350,7 @@
       </>);
     }
 
+    // 메인 앱
     function App() {
       const [view,setView]=React.useState('daily');
       const [selectedDate,setSelectedDate]=React.useState(new Date());
@@ -315,15 +361,14 @@
         const ref=database.ref('pages');
         ref.on('value',snap=>setAllPages(snap.val()||{}));
         return()=>ref.off();
-      },[]);
+      }, []);
 
       const dateKey=selectedDate.toLocaleDateString('sv-SE');
-
       React.useEffect(()=>{
         const cref=database.ref(`pages/${dateKey}/color`);
         const off=cref.on('value',snap=>setHighlightColor(snap.val()||'#888888'));
         return()=>cref.off('value',off);
-      },[dateKey]);
+      }, [dateKey]);
 
       const prev=()=>setSelectedDate(d=>new Date(d.getFullYear(),d.getMonth()-1,1));
       const next=()=>setSelectedDate(d=>new Date(d.getFullYear(),d.getMonth()+1,1));
@@ -353,12 +398,12 @@
             <div className="calendar" style={{'--highlight-color':highlightColor}}>
               {weekdays.map((d,i)=><div key={i} className="calendar-day"
                 style={{color:i===0?'#8A4545':i===6?'#434A8E':'#666'}}>{d}</div>)}
-              {Array(firstDay).fill().map((_,i)=><div key={i}/>)}
+              {Array(firstDay).fill().map((_,i)=><div key={`e${i}`}/>)} 
               {Array.from({length:dayCount}).map((_,i)=>{
                 const dt=new Date(year,month,i+1);
                 const key=dt.toLocaleDateString('sv-SE');
                 const sel=key===dateKey, rec=Boolean(allPages[key]);
-                const cls=['calendar-date',sel?'highlight':'',!sel&&rec?'has-record':''].join('');
+                const cls=['calendar-date',sel?'highlight':'',!sel&&rec?'has-record':''].join(' ');
                 return(<button key={i} className={cls}
                   onClick={()=>{setSelectedDate(dt);setView('daily');}}>{i+1}</button>);
               })}
@@ -377,7 +422,7 @@
           </div>
         </div>
         <DiscordBotWidget />
-      </>);  
+      </>);
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
