@@ -38,10 +38,8 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
   <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-database-compat.js"></script>
-
   <script type="text/babel">
     // Firebase 초기화
     const firebaseConfig = {
@@ -69,7 +67,7 @@
         <div className="mood-tracker">
           {Object.entries(labels).map(([key, emoji]) => (
             <button key={key}
-              onClick={() => database.ref(`pages/${dateKey}/mood`).set(key).catch(err => console.error('DB write failed (mood):', err))}
+              onClick={() => database.ref(`pages/${dateKey}/mood`).set(key)}
               style={{ background: mood===key ? highlightColor : 'transparent', border: mood===key ? 'none' : '1px solid #ccc' }}>
               {emoji}
             </button>
@@ -91,25 +89,21 @@
       }, [dateKey]);
       return (
         <div className="note-area">
-          <input type="color" className="color-picker" value={highlightColor} onChange={e => onColorChange(e.target.value)} />
+          <input type="color" className="color-picker" value={highlightColor} onChange={e => { onColorChange(e.target.value); database.ref(`pages/${dateKey}/color`).set(e.target.value); }} />
           <div className="section">
-            <h2 style={{ color: highlightColor }}>ᴍᴏʀɴɪɴɢ</h2>
-            <textarea rows={4} value={morning}
-              onChange={e => { setMorning(e.target.value); database.ref(`pages/${dateKey}/morning`).set(e.target.value).catch(err => console.error('DB write failed (morning):', err)); }}
-              style={{ borderColor: highlightColor }} />
+            <h2 style={{ color: highlightColor }}>모닝 페이지</h2>
+            <textarea rows={4} value={morning} onChange={e => setMorning(e.target.value)} onBlur={() => database.ref(`pages/${dateKey}/morning`).set(morning)} style={{ borderColor: highlightColor }} />
           </div>
           <MoodTracker dateKey={dateKey} highlightColor={highlightColor} />
           <div className="section">
-            <h2 style={{ color: highlightColor }}>ᴇᴠᴇɴɪɴɢ</h2>
-            <textarea rows={4} value={gratitude}
-              onChange={e => { setGratitude(e.target.value); database.ref(`pages/${dateKey}/gratitude`).set(e.target.value).catch(err => console.error('DB write failed (gratitude):', err)); }}
-              style={{ borderColor: highlightColor }} />
+            <h2 style={{ color: highlightColor }}>감사 일기</h2>
+            <textarea rows={4} value={gratitude} onChange={e => setGratitude(e.target.value)} onBlur={() => database.ref(`pages/${dateKey}/gratitude`).set(gratitude)} style={{ borderColor: highlightColor }} />
           </div>
         </div>
       );
     }
 
-    // MonthlySummary 컴포넌트 (로딩 상태 추가)
+    // MonthlySummary 컴포넌트 (로딩 상태 처리)
     function MonthlySummary({ year, month }) {
       const [counts, setCounts] = React.useState(null);
       React.useEffect(() => {
@@ -126,15 +120,13 @@
             }
           });
           setCounts({ morning: mCount, gratitude: gCount, ...moodCount });
-        });
+        }, err => console.error('DB read failed:', err));
       }, [year, month]);
-      if (counts === null) {
-        return <div className="summary-area"><p>로드 중...</p></div>;
-      }
+      if (counts === null) return <div className="summary-area"><p>로딩 중...</p></div>;
       return (
         <div className="summary-area">
-          <div>☀️ ᴍᴏʀɴɪɴɢ: {counts.morning}</div>
-          <div>🌙 ᴇᴠᴇɴɪɴɢ: {counts.gratitude}</div>
+          <div>☀️ 모닝페이지: {counts.morning}</div>
+          <div>🌙 감사일기: {counts.gratitude}</div>
           <div>😻 행복: {counts.happy}</div>
           <div>😺 보통: {counts.neutral}</div>
           <div>😿 슬픔: {counts.sad}</div>
@@ -157,15 +149,15 @@
         return () => cRef.off('value', off);
       }, [dateKey]);
 
-      const prevMonth = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
-      const nextMonth = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+      const prevMonth = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1));
+      const nextMonth = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1));
       const goToday = () => setSelectedDate(new Date());
-      const changeColor = c => database.ref(`pages/${dateKey}/color`).set(c).catch(err => console.error('DB write failed (color):', err));
+      const changeColor = c => database.ref(`pages/${dateKey}/color`).set(c);
 
       const year = selectedDate.getFullYear();
       const month = selectedDate.getMonth();
       const firstDay = new Date(year, month, 1).getDay();
-      const totalDays = new Date(year, month + 1, 0).getDate();
+      const totalDays = new Date(year, month+1, 0).getDate();
       const days = ['S','M','T','W','T','F','S'];
 
       return (
@@ -179,34 +171,24 @@
               <button onClick={goToday} style={{ background:'#fff', border:'none', cursor:'pointer' }}>Today</button>
               <button onClick={nextMonth} style={{ background:'#fff', border:'none', cursor:'pointer' }}>→</button>
             </div>
-            <button className="toggle-btn" onClick={() => setView(v => v === 'daily' ? 'summary' : 'daily')}>
-              {view === 'daily' ? '📊' : '📖'}
+            <button className="toggle-btn" onClick={() => setView(v => v==='daily' ? 'summary' : 'daily')}>
+              {view==='daily' ? '📊' : '📖'}
             </button>
             <div className="calendar">
-              {days.map((d, i) => (
-                <div key={i} className="calendar-day" style={{ color: i===0 ? '#8A4545' : i===6 ? '#434A8E' : '#666' }}>{d}</div>
-              ))}
-              {Array(firstDay).fill().map((_, i) => <div key={i} />)}
-              {Array.from({ length: totalDays }, (_, i) => {
-                const dt = new Date(year, month, i + 1);
-                const k = dt.toLocaleDateString('sv-SE');
-                const sel = k === dateKey;
-                return <button key={i} onClick={() => { setSelectedDate(dt); setView('daily'); }} className={`calendar-date${sel ? ' highlight' : ''}`} style={{ '--highlight-color': dateColor }}>{i + 1}</button>;
+              {days.map((d,i)=><div key={i} className="calendar-day" style={{color:i===0?'#8A4545':i===6?'#434A8E':'#666'}}>{d}</div>)}
+              {Array(firstDay).fill(null).map((_,i)=><div key={i}/>)}
+              {Array.from({length:totalDays},(_,i)=>{const dt=new Date(year,month,i+1),k=dt.toLocaleDateString('sv-SE'),sel=k===dateKey;
+                return <button key={i} onClick={()=>{setSelectedDate(dt);setView('daily');}} className={`calendar-date${sel?' highlight':''}`} style={{'--highlight-color':dateColor}}>{i+1}</button>;
               })}
             </div>
           </div>
           <div className="main">
-            {view === 'daily' ? (
-              <NoteArea key={dateKey} dateKey={dateKey} highlightColor={dateColor} onColorChange={changeColor} />
-            ) : (
-              <MonthlySummary year={year} month={month} />
-            )}
+            {view==='daily' ? <NoteArea key={dateKey} dateKey={dateKey} highlightColor={dateColor} onColorChange={changeColor}/> : <MonthlySummary year={year} month={month}/>}        
           </div>
         </div>
       );
     }
-    
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
   </script>
 </body>
 </html>
