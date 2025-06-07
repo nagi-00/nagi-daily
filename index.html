@@ -6,50 +6,53 @@
   <link rel="icon" href="./favi.ico" type="image/x-icon" />
   <style>
     @font-face { font-family:'HJSS'; src:url('./HJSS.ttf') format('truetype'); }
-    body { margin:0; padding:0; font-family:'HJSS',sans-serif; background:#f5f5f5; box-sizing:border-box; }
-    *,*::before,*::after { box-sizing:inherit; }
+    body { margin:0; padding:0; font-family:'HJSS',sans-serif; background:#f5f5f5; }
     .sidebar { position:fixed; left:0; top:0; bottom:0; width:16rem; background:#fff; overflow:auto;
       box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1rem; }
     .main { margin-left:16rem; padding:1rem; }
     .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:0.25rem; font-size:0.875rem; }
     .calendar-day { text-align:center; font-weight:500; }
-    .calendar-date { width:1.8rem; height:1.8rem; display:flex; align-items:center; justify-content:center;
-      border:none; border-radius:9999px; background:transparent; cursor:pointer; }
+    .calendar-date { background: #fff; width:1.8rem; height:1.8rem; display:flex; align-items:center; justify-content:center;
+      border:none; border-radius:9999px; cursor:pointer; }
     .highlight { background:var(--highlight-color,#888); color:#fff; }
-    .note-area, .summary-area { max-width:42rem; margin:0 auto; background:#fff; border-radius:0.5rem;
-      box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1.5rem; }
+    .note-area, .summary-area { max-width:42rem; margin:0 auto; background:#fff;
+      border-radius:0.5rem; box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1.5rem; }
     .section { margin-bottom:1rem; }
-    .section h2 { font-size:1.25rem; font-weight:bold; margin-bottom:0.5rem; }
-    textarea { width:100%; border:1px solid #ccc; padding:0.5rem; border-radius:0.25rem;
-      resize:vertical; font-weight:normal; }
-    .color-picker { width:1.5rem; height:1.5rem; border:none; padding:0; cursor:pointer; margin-bottom:1rem; }
+    .section h2 { font-size:1.25rem; margin-bottom:0.5rem; }
+    textarea { width:100%; padding:0.5rem; border:1px solid #ccc;
+      border-radius:0.25rem; resize:vertical; }
+    .color-picker { width:1.5rem; height:1.5rem; border:none; cursor:pointer; margin-bottom:1rem; }
     .mood-tracker { display:flex; gap:0.5rem; margin-bottom:1rem; }
-    .mood-tracker button { font-size:1.5rem; background:transparent; border:1px solid #ccc;
-      border-radius:0.25rem; cursor:pointer; padding:0.25rem; }
-    .mood-tracker button:hover { opacity:0.8; }
-    .toggle-btn { margin-top:1rem; background:#fff; border:none; color:#000; cursor:pointer;
-      font-weight:bold; width:100%; text-align:center; padding:0.5rem; border-radius:0.25rem; }
-    .summary-area div { margin-bottom:0.75rem; font-size:1rem; }
+    .mood-tracker button { font-size:1.5rem; padding:0.25rem;
+      border:1px solid #ccc; border-radius:0.25rem; cursor:pointer; }
+    .toggle-btn { margin-top:1rem; width:100%; padding:0.5rem;
+      border:none; background:#fff; cursor:pointer; font-weight:bold;
+      border-radius:0.25rem; }
+    .summary-area div { margin-bottom:0.75rem; }
   </style>
 </head>
 <body>
   <div id="root"></div>
-
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-database-compat.js"></script>
   <script type="text/babel">
-    // 환경 체크: 파일 프로토콜일 경우 Firebase 동작 제한
-    if (window.location.protocol === 'file:') {
-      alert('⚠️ Firebase 연동을 위해 HTTP 환경에서 실행하세요.');
-    }
     // Firebase 초기화
-    const firebaseConfig = { /* ... */ };
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbM_NytZTqJSTPU74A9qYSskQ0GgXWtgw",
+      authDomain: "nagi-daily.firebaseapp.com",
+      databaseURL: "https://nagi-daily-default-rtdb.firebaseio.com",
+      projectId: "nagi-daily",
+      storageBucket: "nagi-daily.firebasestorage.app",
+      messagingSenderId: "733658746377",
+      appId: "1:733658746377:web:7537bfc577d37a1ab0b2d8"
+    };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // MoodTracker 컴포넌트
     function MoodTracker({ dateKey, highlightColor }) {
       const [mood, setMood] = React.useState('');
       React.useEffect(() => {
@@ -57,13 +60,16 @@
         const off = ref.on('value', snap => setMood(snap.val() || ''));
         return () => ref.off('value', off);
       }, [dateKey]);
-      const labels = { happy:'😻', neutral:'😺', sad:'😿', angry:'😾', excited:'✨' };
+      const labels = { happy: '😻', neutral: '😺', sad: '😿', angry: '😾', excited: '✨' };
       return (
         <div className="mood-tracker">
           {Object.entries(labels).map(([key, emoji]) => (
             <button key={key}
               onClick={() => database.ref(`pages/${dateKey}/mood`).set(key)}
-              style={{ background: mood===key ? highlightColor : 'transparent', border: mood===key ? 'none' : '1px solid #ccc' }}>
+              style={{
+                background: mood === key ? highlightColor : 'transparent',
+                border: mood === key ? 'none' : '1px solid #ccc'
+              }}>
               {emoji}
             </button>
           ))}
@@ -71,108 +77,157 @@
       );
     }
 
+    // NoteArea 컴포넌트
     function NoteArea({ dateKey, highlightColor, onColorChange }) {
       const [morning, setMorning] = React.useState('');
       const [gratitude, setGratitude] = React.useState('');
       React.useEffect(() => {
-        database.ref(`pages/${dateKey}/morning`).on('value', snap => setMorning(snap.val() || ''));
-        database.ref(`pages/${dateKey}/gratitude`).on('value', snap => setGratitude(snap.val() || ''));
+        const mRef = database.ref(`pages/${dateKey}/morning`);
+        const gRef = database.ref(`pages/${dateKey}/gratitude`);
+        const offM = mRef.on('value', snap => setMorning(snap.val() || ''));
+        const offG = gRef.on('value', snap => setGratitude(snap.val() || ''));
+        return () => { mRef.off('value', offM); gRef.off('value', offG); };
       }, [dateKey]);
       return (
         <div className="note-area">
-          <input type="color" className="color-picker" value={highlightColor} onChange={e => onColorChange(e.target.value)} />
+          <input type="color" className="color-picker"
+            value={highlightColor}
+            onChange={e => {
+              onColorChange(e.target.value);
+              database.ref(`pages/${dateKey}/color`).set(e.target.value);
+            }} />
           <div className="section">
             <h2 style={{ color: highlightColor }}>ᴍᴏʀɴɪɴɢ</h2>
-            <textarea rows={4} value={morning}
-              onChange={e => { database.ref(`pages/${dateKey}/morning`).set(e.target.value); setMorning(e.target.value); }}
+            <textarea rows={4}
+              value={morning}
+              onChange={e => {
+                const v = e.target.value;
+                setMorning(v);
+                database.ref(`pages/${dateKey}/morning`).set(v);
+              }}
               style={{ borderColor: highlightColor }} />
           </div>
           <MoodTracker dateKey={dateKey} highlightColor={highlightColor} />
           <div className="section">
             <h2 style={{ color: highlightColor }}>ᴇᴠᴇɴɪɴɢ</h2>
-            <textarea rows={4} value={gratitude}
-              onChange={e => { database.ref(`pages/${dateKey}/gratitude`).set(e.target.value); setGratitude(e.target.value); }}
+            <textarea rows={4}
+              value={gratitude}
+              onChange={e => {
+                const v = e.target.value;
+                setGratitude(v);
+                database.ref(`pages/${dateKey}/gratitude`).set(v);
+              }}
               style={{ borderColor: highlightColor }} />
           </div>
         </div>
       );
     }
 
+    // MonthlySummary 컴포넌트
     function MonthlySummary({ year, month }) {
       const [counts, setCounts] = React.useState(null);
       React.useEffect(() => {
         database.ref('pages').once('value', snap => {
           const data = snap.val() || {};
-          let mCount=0, gCount=0;
-          const moodCount={happy:0,neutral:0,sad:0,angry:0,excited:0};
-          Object.entries(data).forEach(([d,val])=>{
-            const dt=new Date(d);
-            if(dt.getFullYear()===year&&dt.getMonth()===month){
-              if(val.morning) mCount++;
-              if(val.gratitude) gCount++;
-              if(val.mood&&moodCount[val.mood]!==undefined) moodCount[val.mood]++;
+          let mCount = 0, gCount = 0;
+          const moodCount = { happy: 0, neutral: 0, sad: 0, angry: 0, excited: 0 };
+          Object.entries(data).forEach(([date, val]) => {
+            const dt = new Date(date);
+            if (dt.getFullYear() === year && dt.getMonth() === month) {
+              if (val.morning) mCount++;
+              if (val.gratitude) gCount++;
+              if (val.mood && moodCount[val.mood] !== undefined) moodCount[val.mood]++;
             }
           });
-          setCounts({ morning:mCount, gratitude:gCount, ...moodCount });
+          setCounts({ morning: mCount, gratitude: gCount, ...moodCount });
         });
-      },[year,month]);
-      if(counts===null) return <div className="summary-area"><p>🇳 🇴 🇼  🇱 🇴 🇦 🇩 🇮 🇳 🇬 . . .</p></div>;
+      }, [year, month]);
+      if (counts === null) {
+        return <div className="summary-area"><p>🇳 🇴 🇼  🇱 🇴 🇦 🇩 🇮 🇳 🇬 . . .</p></div>;
+      }
       return (
         <div className="summary-area">
-          <div>☀️ {counts.morning}</div>
-          <div>🌙 {counts.gratitude}</div>
-          <div>😻 {counts.happy}</div>
-          <div>😺 {counts.neutral}</div>
-          <div>😿 {counts.sad}</div>
-          <div>😾 {counts.angry}</div>
-          <div>✨ {counts.excited}</div>
+          <div>☀️ ᴍᴏʀɴɪɴɢ: {counts.morning}</div>
+          <div>🌙 ᴇᴠᴇɴɪɴɢ: {counts.gratitude}</div>
+          <div>😻 행복: {counts.happy}</div>
+          <div>😺 보통: {counts.neutral}</div>
+          <div>😿 슬픔: {counts.sad}</div>
+          <div>😾 분노: {counts.angry}</div>
+          <div>✨ 흥분: {counts.excited}</div>
         </div>
       );
     }
 
+    // App 컴포넌트
     function App() {
       const [view, setView] = React.useState('daily');
       const [selectedDate, setSelectedDate] = React.useState(new Date());
-      const dateKey=selectedDate.toLocaleDateString('sv-SE');
+      const dateKey = selectedDate.toLocaleDateString('sv-SE');
       const [dateColor, setDateColor] = React.useState('#888888');
-      React.useEffect(()=>{
+      React.useEffect(() => {
         setDateColor('#888888');
-        const ref=database.ref(`pages/${dateKey}/color`);
-        ref.on('value', snap=>setDateColor(snap.val()||'#888888'));
-      },[dateKey]);
+        const colorRef = database.ref(`pages/${dateKey}/color`);
+        const off = colorRef.on('value', snap => setDateColor(snap.val() || '#888888'));
+        return () => colorRef.off('value', off);
+      }, [dateKey]);
 
-      const prevMonth=()=>setSelectedDate(d=>new Date(d.getFullYear(),d.getMonth()-1,1));
-      const nextMonth=()=>setSelectedDate(d=>new Date(d.getFullYear(),d.getMonth()+1,1));
-      const goToday=()=>setSelectedDate(new Date());
-      const changeColor=c=>database.ref(`pages/${dateKey}/color`).set(c);
+      const prevMonth = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+      const nextMonth = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+      const goToday = () => setSelectedDate(new Date());
+      const changeColor = color => database.ref(`pages/${dateKey}/color`).set(color);
 
-      const year=selectedDate.getFullYear();
-      const month=selectedDate.getMonth();
-      const firstDay=new Date(year,month,1).getDay();
-      const totalDays=new Date(year,month+1,0).getDate();
-      const days=['S','M','T','W','T','F','S'];
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const days = ['S','M','T','W','T','F','S'];
 
       return (
-        <div style={{display:'flex'}}>
+        <div style={{ display: 'flex' }}>
           <div className="sidebar">
-            <h2 style={{textAlign:'center',whiteSpace:'pre-line',marginBottom:'1rem'}}>
-              {year}{'\n'}{selectedDate.toLocaleString('en-US',{month:'long'})}
+            <h2 style={{ textAlign: 'center', whiteSpace: 'pre-line', marginBottom: '1rem' }}>
+              {year}{'\n'}{selectedDate.toLocaleDateString('en-US', { month: 'long' })}
             </h2>
-            <div style={{display:'flex',justifyContent:'center',gap:'0.5rem',margin:'0.5rem 0'}}>
-              <button onClick={prevMonth} style={{background:'#fff',border:'none',cursor:'pointer'}}>←</button>
-              <button onClick={goToday} style={{background:'#fff',border:'none',cursor:'pointer'}}>Today</button>
-              <button onClick={nextMonth} style={{background:'#fff',border:'none',cursor:'pointer'}}>→</button>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', margin: '0.5rem 0' }}>
+              <button onClick={prevMonth} style={{ background: '#fff', border: 'none', cursor: 'pointer' }}>←</button>
+              <button onClick={goToday} style={{ background: '#fff', border: 'none', cursor: 'pointer' }}>Today</button>
+              <button onClick={nextMonth} style={{ background: '#fff', border: 'none', cursor: 'pointer' }}>→</button>
             </div>
-            <button className="toggle-btn" onClick={()=>setView(v=>v==='daily'?'🇲 🇴 🇳 🇹 🇭 🇱 🇾':'🇷 🇪 🇹 🇺 🇷 🇳')}>…</button>
-            <div className="calendar">…</div>
+            <button className="toggle-btn" onClick={() => setView(v => v === 'daily' ? 'summary' : 'daily')}>
+              {view === 'daily' ? '🇲 🇴 🇳 🇹 🇭 🇱 🇾' : '🇷 🇪 🇹 🇺 🇷 🇳'}
+            </button>
+            <div className="calendar">
+              {days.map((d, i) => (
+                <div key={i} className="calendar-day" style={{ color: i === 0 ? '#8A4545' : i === 6 ? '#434A8E' : '#666' }}>{d}</div>
+              ))}
+              {Array(firstDay).fill().map((_, i) => <div key={i} />)}
+              {Array.from({ length: totalDays }, (_, i) => {
+                const dt = new Date(year, month, i + 1);
+                const k = dt.toLocaleDateString('sv-SE');
+                const isSelected = k === dateKey;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => { setSelectedDate(dt); setView('daily'); }}
+                    className={`calendar-date${isSelected ? ' highlight' : ''}`}
+                    style={{ '--highlight-color': dateColor }}
+                  >{i + 1}</button>
+                );
+              })}
+            </div>
           </div>
           <div className="main">
-            {view==='daily'? <NoteArea key={dateKey} dateKey={dateKey} highlightColor={dateColor} onColorChange={changeColor}/> : <MonthlySummary year={year} month={month}/>}        
+            {view === 'daily' ? (
+              <NoteArea key={dateKey} dateKey={dateKey} highlightColor={dateColor} onColorChange={changeColor} />
+            ) : (
+              <MonthlySummary year={year} month={month} />
+            )}
           </div>
         </div>
       );
     }
-    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
