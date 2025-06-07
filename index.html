@@ -10,178 +10,172 @@
     @font-face { font-family:'ywoo'; src:url('./ywoo.ttf') format('truetype'); }
     @font-face { font-family:'caa'; src:url('./caa.ttf') format('truetype'); }
     body { margin:0; padding:0; font-family:'HJSS',sans-serif; background:#f5f5f5; }
+
+    /* 사이드바 & 메인 레이아웃 */
     .sidebar { position:fixed; left:0; top:0; bottom:0; width:16rem; background:#fff; overflow:auto;
       box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1rem; }
     .main { margin-left:16rem; padding:1rem; display:flex; justify-content:center; }
+
+    /* 네비게이션 버튼 */
+    .nav-btns { display:flex; justify-content:center; gap:0.5rem; margin:0.5rem 0;
+      white-space: nowrap; }
+    .nav-btns button { background:#fff; border:none; padding:0.5rem 1rem; cursor:pointer; }
+
+    /* 토글 버튼 */
+    .toggle-btn { margin:1rem 0; width:100%; padding:0.5rem; border:none; background:#fff;
+      cursor:pointer; font-weight:bold; border-radius:0.25rem; white-space: nowrap; }
+
+    /* 달력 */
     .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:0.25rem; font-size:0.875rem; }
     .calendar-day { text-align:center; font-weight:500; }
-    .calendar-date { position:relative; width:1.8rem; height:1.8rem; display:flex; align-items:center; justify-content:center;
-      background:#fff; border:none; border-radius:9999px; cursor:pointer; }
-    .calendar-date .dot { position:absolute; bottom:2px; width:4px; height:4px; background:#888; border-radius:50%; }
-    .highlight { background:var(--highlight-color,#888); color:#fff; }
-    .note-area, .summary-area { max-width:42rem; background:#fff; border-radius:0.5rem; box-shadow:0 2px 5px rgba(0,0,0,0.1);
-      padding:1.5rem; }
+    .calendar-date { position:relative; width:1.8rem; height:1.8rem; display:flex;
+      align-items:center; justify-content:center; background:#fff; border:none;
+      border-radius:9999px; cursor:pointer; transition: background 0.2s; }
+    .calendar-date.has-record { /* 기록 있는 날 반투명 음영 */
+      background: var(--highlight-color,#888)33;
+    }
+    .calendar-date.highlight { /* 선택된 날 full 컬러 */
+      background: var(--highlight-color,#888);
+      color:#fff;
+    }
+
+    /* 노트 & 요약 영역 */
+    .note-area, .summary-area { max-width:42rem; background:#fff; border-radius:0.5rem;
+      box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1.5rem; }
     .section { margin-bottom:1rem; }
     .section h2 { font-size:1.25rem; margin-bottom:0.5rem; }
     textarea { width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:0.25rem; resize:vertical; }
     .color-picker { width:1.5rem; height:1.5rem; border:none; cursor:pointer; margin-bottom:1rem; }
     .mood-tracker { display:flex; gap:0.5rem; margin-bottom:1rem; }
-    .mood-tracker button { font-size:1.5rem; padding:0.25rem; border:1px solid #ccc; border-radius:0.25rem; cursor:pointer; }
-    .toggle-btn { margin:1rem 0; width:100%; padding:0.5rem; border:none; background:#fff; cursor:pointer; font-weight:bold; border-radius:0.25rem; }
+    .mood-tracker button { font-size:1.5rem; padding:0.25rem; border:1px solid #ccc;
+      border-radius:0.25rem; cursor:pointer; background:transparent; }
+    .mood-tracker button.selected { border:none; }
     .font-select { margin-bottom:1rem; }
   </style>
 </head>
 <body>
   <div id="root"></div>
+
+  <!-- React, Firebase, Babel, html2canvas ... -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-database-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
   <script type="text/babel">
-    // Firebase 초기화
+    // Firebase 초기화 (기존 설정 유지)
     const firebaseConfig = {
-      apiKey: "AIzaSyBbM_NytZTqJSTPU74A9qYSskQ0GgXWtgw",
-      authDomain: "nagi-daily.firebaseapp.com",
+      apiKey: "...",
+      authDomain: "...",
       databaseURL: "https://nagi-daily-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "nagi-daily",
-      storageBucket: "nagi-daily.firebasestorage.app",
-      messagingSenderId: "733658746377",
-      appId: "1:733658746377:web:7537bfc577d37a1ab0b2d8"
+      projectId: "...",
+      storageBucket: "...",
+      messagingSenderId: "...",
+      appId: "..."
     };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    function MoodTracker({ dateKey, highlightColor }) {
-      const [mood, setMood] = React.useState('');
-      React.useEffect(() => {
-        const ref = database.ref(`pages/${dateKey}/mood`);
-        const off = ref.on('value', snap => setMood(snap.val() || ''));
-        return () => ref.off('value', off);
-      }, [dateKey]);
-      const labels = { happy:'😻', neutral:'😺', sad:'😿', angry:'😾', excited:'✨' };
-      return (
-        <div className="mood-tracker">
-          {Object.entries(labels).map(([key, emoji]) => (
-            <button key={key}
-              onClick={() => {
-                const next = mood === key ? '' : key;
-                database.ref(`pages/${dateKey}/mood`).set(next);
-              }}
-              style={{ background: mood===key ? highlightColor : 'transparent', border: mood===key ? 'none' : '1px solid #ccc' }}>
-              {emoji}
-            </button>
-          ))}
-        </div>
-      );
-    }
-
-    function NoteArea({ dateKey, highlightColor, onColorChange }) {
-      const [morning, setMorning] = React.useState('');
-      const [gratitude, setGratitude] = React.useState('');
-      React.useEffect(() => {
-        const mRef = database.ref(`pages/${dateKey}/morning`);
-        const gRef = database.ref(`pages/${dateKey}/gratitude`);
-        mRef.on('value', snap => setMorning(snap.val() || ''));
-        gRef.on('value', snap => setGratitude(snap.val() || ''));
-        return () => { mRef.off(); gRef.off(); };
-      }, [dateKey]);
-      const handleKey = (e, val, setFn, path) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          database.ref(path).set(val);
-        }
-      };
-      const exportImage = async () => {
-        const el = document.querySelector('.note-area');
-        const canvas = await html2canvas(el, { backgroundColor: '#fff', scale:2 });
-        canvas.toBlob(blob => {
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = `daily-${dateKey}.png`;
-          a.click();
-        });
-      };
-      return (
-        <div className="note-area">
-          <select className="font-select" onChange={e=>document.body.style.fontFamily = e.target.value}>
-            <option value="HJSS">HJSS</option>
-            <option value="Yeonwoo">ywoo</option>
-            <option value="BbangE">bbang</option>
-            <option value="Cassiopeia">caa</option>
-          </select>
-          <input type="color" className="color-picker" value={highlightColor} onChange={e=>{onColorChange(e.target.value);}} />
-          <div className="section">
-            <h2 style={{ color: highlightColor }}>ᴍᴏʀɴɪɴɢ</h2>
-            <textarea rows={4} value={morning}
-              onChange={e=>{setMorning(e.target.value); database.ref(`pages/${dateKey}/morning`).set(e.target.value);}}
-              onKeyDown={e=>handleKey(e,morning,setMorning,`pages/${dateKey}/morning`)}
-              style={{ borderColor: highlightColor }} />
-          </div>
-          <MoodTracker dateKey={dateKey} highlightColor={highlightColor} />
-          <div className="section">
-            <h2 style={{ color: highlightColor }}>ᴇᴠᴇɴɪɴɢ</h2>
-            <textarea rows={4} value={gratitude}
-              onChange={e=>{setGratitude(e.target.value); database.ref(`pages/${dateKey}/gratitude`).set(e.target.value);}}
-              onKeyDown={e=>handleKey(e,gratitude,setGratitude,`pages/${dateKey}/gratitude`)}
-              style={{ borderColor: highlightColor }} />
-          </div>
-          <button onClick={exportImage} style={{ marginTop:'1rem', padding:'.5rem', background:highlightColor, color:'#fff', border:'none', borderRadius:'.25rem', cursor:'pointer' }}>
-            Export Image
-          </button>
-        </div>
-      );
-    }
-
-    function MonthlySummary({ year, month }) {
-      const [counts, setCounts] = React.useState(null);
-      const canvasRef = React.useRef(null);
-      React.useEffect(() => {
-        database.ref('pages').once('value', snap => {
-          const data = snap.val()||{};
-          let m=0,g=0; const mc={happy:0,neutral:0,sad:0,angry:0,excited:0};
-          Object.entries(data).forEach(([d,val])=>{const dt=new Date(d); if(dt.getFullYear()===year&&dt.getMonth()===month){val.morning&&m++; val.gratitude&&g++; val.mood&&mc[val.mood]++;}});
-          setCounts({morning:m,gratitude:g,...mc});
-          const ctx = canvasRef.current.getContext('2d');
-          new Chart(ctx,{type:'bar',data:{labels:['🙂','😐','😢','😠','✨'],datasets:[{label:'감정 빈도',data:[mc.happy,mc.neutral,mc.sad,mc.angry,mc.excited],backgroundColor:highlightColor}]},options:{scales:{yAxes:[{ticks:{beginAtZero:true,stepSize:1}}]}}});
-        });
-      },[year,month]);
-      if(!counts) return <div className="summary-area"><p>🇳 🇴 🇼  🇱 🇴 🇦 🇩 🇮 🇳 🇬 . . .</p></div>;
-      return (
-        <div className="summary-area">
-          <canvas ref={canvasRef} style={{width:'100%',height:'200px'}} />
-        </div>
-      );
-    }
-
     function App() {
-      const [view,setView]=React.useState('daily');
-      const [selectedDate,setSelectedDate]=React.useState(new Date());
-      const dateKey=selectedDate.toLocaleDateString('sv-SE');
-      const [dateColor,setDateColor]=React.useState('#888888');
-      const [allPages,setAllPages]=React.useState({});
-      React.useEffect(()=>{database.ref('pages').on('value',s=>setAllPages(s.val()||{}));},[]);
-      React.useEffect(()=>{const r=database.ref(`pages/${dateKey}/color`); r.on('value',s=>setDateColor(s.val()||'#888888')); return()=>r.off();},[dateKey]);
-      const prev=()=>setSelectedDate(d=>new Date(d.getFullYear(),d.getMonth()-1,1));
-      const next=()=>setSelectedDate(d=>new Date(d.getFullYear(),d.getMonth()+1,1));
-      const today=()=>setSelectedDate(new Date());
-      const changeFontColor=c=>database.ref(`pages/${dateKey}/color`).set(c);
-      const y=selectedDate.getFullYear(), m=selectedDate.getMonth();
-      const fd=new Date(y,m,1).getDay(), td=new Date(y,m+1,0).getDate();
-      const days=['S','M','T','W','T','F','S'];
-      return <div style={{display:'flex'}}>
-        <div className="sidebar">
-          <h2 style={{textAlign:'center',whiteSpace:'pre-line',marginBottom:'1rem'}}>{y}{'\n'}{selectedDate.toLocaleDateString('en-US',{month:'long'})}</h2>
-          <div style={{display:'flex',justifyContent:'center',gap:'.5rem',margin:'.5rem 0'}}><button onClick={prev}>←</button><button onClick={today}>Today</button><button onClick={next}>→</button></div>
-          <button className="toggle-btn" onClick={()=>setView(v=>v==='daily'?'🇲 🇴 🇳 🇹 🇭 🇱 🇾':'🇷 🇪 🇹 🇺 🇷 🇳')}>{view==='daily'?'🇲 🇴 🇳 🇹 🇭 🇱 🇾':'🇷 🇪 🇹 🇺 🇷 🇳'}</button>
-          <div className="calendar">{days.map((d,i)=><div key={i} className="calendar-day" style={{color:i===0?'#8A4545':i===6?'#434A8E':'#666'}}>{d}</div>)}{Array(fd).fill().map((_,i)=><div key={i}/>)}{Array.from({length:td},(_,i)=>{const dt=new Date(y,m,i+1),k=dt.toLocaleDateString('sv-SE'),has=allPages[k],sel=k===dateKey;return <button key={i} onClick={()=>{setSelectedDate(dt);setView('daily');}} className={`calendar-date${sel?' highlight':''}`} style={{'--highlight-color':dateColor}}>{i+1}{has && <span className="dot"/>}</button>;})}</div>
+      const [view, setView] = React.useState('daily');
+      const [selectedDate, setSelectedDate] = React.useState(new Date());
+      const dateKey = selectedDate.toLocaleDateString('sv-SE');
+      const [dateColor, setDateColor] = React.useState('#888888');
+      const [allPages, setAllPages] = React.useState({});
+
+      React.useEffect(() => {
+        const ref = database.ref('pages');
+        ref.on('value', snap => setAllPages(snap.val() || {}));
+        return () => ref.off();
+      }, []);
+
+      React.useEffect(() => {
+        const cref = database.ref(`pages/${dateKey}/color`);
+        cref.on('value', snap => setDateColor(snap.val() || '#888888'));
+        return () => cref.off();
+      }, [dateKey]);
+
+      const prev  = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1));
+      const next  = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1));
+      const today = () => setSelectedDate(new Date());
+
+      const changeColor = c => database.ref(`pages/${dateKey}/color`).set(c);
+
+      // 달력 계산
+      const y  = selectedDate.getFullYear();
+      const m  = selectedDate.getMonth();
+      const fd = new Date(y, m, 1).getDay();
+      const td = new Date(y, m+1, 0).getDate();
+      const days = ['S','M','T','W','T','F','S'];
+
+      // 버튼 레이블
+      const toggleLabel = view === 'daily'
+        ? '🇲 🇴 🇳 🇴 🇭 🇱 🇾'
+        : '🇷 🇪 🇹 🇺 🇷 🇳';
+
+      return (
+        <div style={{ display:'flex' }}>
+          <div className="sidebar">
+            <h2 style={{ textAlign:'center', whiteSpace:'pre-line', marginBottom:'1rem' }}>
+              {y}{'\n'}{selectedDate.toLocaleDateString('en-US',{month:'long'})}
+            </h2>
+
+            <div className="nav-btns">
+              <button onClick={prev}>←</button>
+              <button onClick={today}>Today</button>
+              <button onClick={next}>→</button>
+            </div>
+
+            <button className="toggle-btn"
+              onClick={() => setView(v => v === 'daily' ? 'monthly' : 'daily')}>
+              {toggleLabel}
+            </button>
+
+            <div className="calendar" style={{ '--highlight-color': dateColor }}>
+              {days.map((d,i) =>
+                <div key={i} className="calendar-day"
+                  style={{ color: i===0? '#8A4545' : i===6? '#434A8E' : '#666' }}>
+                  {d}
+                </div>
+              )}
+
+              {Array(fd).fill().map((_,i)=>
+                <div key={`e${i}`}/>
+              )}
+
+              {Array.from({ length: td }).map((_,i) => {
+                const dt = new Date(y,m,i+1);
+                const k  = dt.toLocaleDateString('sv-SE');
+                const sel = k === dateKey;
+                const rec = Boolean(allPages[k]);
+                const classes = [
+                  'calendar-date',
+                  sel ? 'highlight' : '',
+                  !sel && rec ? 'has-record' : ''
+                ].join(' ');
+                return (
+                  <button key={i}
+                    className={classes}
+                    onClick={() => { setSelectedDate(dt); setView('daily'); }}>
+                    {i+1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="main">
+            {view === 'daily'
+              ? <NoteArea dateKey={dateKey} highlightColor={dateColor} onColorChange={changeColor}/>
+              : <MonthlySummary year={y} month={m}/>
+            }
+          </div>
         </div>
-        <div className="main">{view==='daily'?<NoteArea dateKey={dateKey} highlightColor={dateColor} onColorChange={changeFontColor}/>:<MonthlySummary year={y} month={m}/>}</div>
-      </div>;
+      );
     }
-    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
