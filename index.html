@@ -91,12 +91,12 @@
         <div className="note-area">
           <input type="color" className="color-picker" value={highlightColor} onChange={e => { onColorChange(e.target.value); database.ref(`pages/${dateKey}/color`).set(e.target.value); }} />
           <div className="section">
-            <h2 style={{ color: highlightColor }}>모닝 페이지</h2>
+            <h2 style={{ color: highlightColor }}>ᴍᴏʀɴɪɴɢ</h2>
             <textarea rows={4} value={morning} onChange={e => setMorning(e.target.value)} onBlur={() => database.ref(`pages/${dateKey}/morning`).set(morning)} style={{ borderColor: highlightColor }} />
           </div>
           <MoodTracker dateKey={dateKey} highlightColor={highlightColor} />
           <div className="section">
-            <h2 style={{ color: highlightColor }}>감사 일기</h2>
+            <h2 style={{ color: highlightColor }}>ᴇᴠᴇɴɪɴɢ</h2>
             <textarea rows={4} value={gratitude} onChange={e => setGratitude(e.target.value)} onBlur={() => database.ref(`pages/${dateKey}/gratitude`).set(gratitude)} style={{ borderColor: highlightColor }} />
           </div>
         </div>
@@ -122,16 +122,16 @@
           setCounts({ morning: mCount, gratitude: gCount, ...moodCount });
         }, err => console.error('DB read failed:', err));
       }, [year, month]);
-      if (counts === null) return <div className="summary-area"><p>로딩 중...</p></div>;
+      if (counts === null) return <div className="summary-area"><p> 🇳 🇴 🇼  🇱 🇴 🇦 🇩 🇮 🇳 🇬 </p></div>;
       return (
         <div className="summary-area">
-          <div>☀️ 모닝페이지: {counts.morning}</div>
-          <div>🌙 감사일기: {counts.gratitude}</div>
-          <div>😻 행복: {counts.happy}</div>
-          <div>😺 보통: {counts.neutral}</div>
-          <div>😿 슬픔: {counts.sad}</div>
-          <div>😾 분노: {counts.angry}</div>
-          <div>✨ 흥분: {counts.excited}</div>
+          <div>☀️ {counts.morning}</div>
+          <div>🌙 {counts.gratitude}</div>
+          <div>😻 {counts.happy}</div>
+          <div>😺 {counts.neutral}</div>
+          <div>😿 {counts.sad}</div>
+          <div>😾 {counts.angry}</div>
+          <div>✨ {counts.excited}</div>
         </div>
       );
     }
