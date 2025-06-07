@@ -64,7 +64,7 @@
         return () => ref.off('value', off);
       }, [dateKey]);
       const options = ['happy','neutral','sad','angry','excited'];
-      const labels = {happy:'🙂',neutral:'😐',sad:'😢',angry:'😠',excited:'✨'};
+      const labels = {happy:'😻',neutral:'😺',sad:'😿',angry:'😾',excited:'✨'};
       return (
         <div className="mood-tracker">
           {options.map(key => (
@@ -96,7 +96,7 @@
         <div className="note-area">
           <input type="color" className="color-picker" value={highlightColor} onChange={e => onColorChange(e.target.value)} />
           <div className="section">
-            <h2 style={{ color: highlightColor }}>모닝 페이지</h2>
+            <h2 style={{ color: highlightColor }}>ᴍᴏʀɴɪɴɢ</h2>
             <textarea
               rows={4}
               value={morning}
@@ -106,7 +106,7 @@
           </div>
           <MoodTracker dateKey={dateKey} highlightColor={highlightColor} />
           <div className="section">
-            <h2 style={{ color: highlightColor }}>감사 일기</h2>
+            <h2 style={{ color: highlightColor }}>ᴇᴠᴇɴɪɴɢ</h2>
             <textarea
               rows={4}
               value={gratitude}
@@ -145,13 +145,13 @@
       }, [year, month]);
       return (
         <div className="summary-area">
-          <div>📔 모닝페이지 작성 수: {counts.morning}</div>
-          <div>🙏 감사일기 작성 수: {counts.gratitude}</div>
-          <div>🙂 행복: {counts.happy}</div>
-          <div>😐 보통: {counts.neutral}</div>
-          <div>😢 슬픔: {counts.sad}</div>
-          <div>😠 분노: {counts.angry}</div>
-          <div>✨ 흥분: {counts.excited}</div>
+          <div>☀️ ᴍᴏʀɴɪɴɢ {counts.morning}</div>
+          <div>🌙 ᴇᴠᴇɴɪɴɢ {counts.gratitude}</div>
+          <div>😻 {counts.happy}</div>
+          <div>😺 {counts.neutral}</div>
+          <div>😿 {counts.sad}</div>
+          <div>😾 {counts.angry}</div>
+          <div>✨ {counts.excited}</div>
         </div>
       );
     }
@@ -194,7 +194,7 @@
               <button onClick={nextMonth} style={{ background:'#fff', border:'none', cursor:'pointer' }}>→</button>
             </div>
             <button className="toggle-btn" onClick={() => setView(v => v === 'daily' ? 'summary' : 'daily')}>
-              {view === 'daily' ? '📊 월간 요약' : '📖 일별 보기'}
+              {view === 'daily' ? ' 🇲 🇴 🇳 🇹 🇭 🇱 🇾 ' : '  🇷 🇪 🇹 🇺 🇷 🇳 ' }
             </button>
             <div className="calendar">
               {days.map((d, i) => (
