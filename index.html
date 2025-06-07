@@ -69,7 +69,7 @@
         <div className="mood-tracker">
           {Object.entries(labels).map(([key, emoji]) => (
             <button key={key}
-              onClick={() => database.ref(`pages/${dateKey}/mood`).set(key)}
+              onClick={() => database.ref(`pages/${dateKey}/mood`).set(key).catch(err => console.error('DB write failed (mood):', err))}
               style={{ background: mood===key ? highlightColor : 'transparent', border: mood===key ? 'none' : '1px solid #ccc' }}>
               {emoji}
             </button>
@@ -95,14 +95,14 @@
           <div className="section">
             <h2 style={{ color: highlightColor }}>ᴍᴏʀɴɪɴɢ</h2>
             <textarea rows={4} value={morning}
-              onChange={e => { setMorning(e.target.value); database.ref(`pages/${dateKey}/morning`).set(e.target.value); }}
+              onChange={e => { setMorning(e.target.value); database.ref(`pages/${dateKey}/morning`).set(e.target.value).catch(err => console.error('DB write failed (morning):', err)); }}
               style={{ borderColor: highlightColor }} />
           </div>
           <MoodTracker dateKey={dateKey} highlightColor={highlightColor} />
           <div className="section">
             <h2 style={{ color: highlightColor }}>ᴇᴠᴇɴɪɴɢ</h2>
             <textarea rows={4} value={gratitude}
-              onChange={e => { setGratitude(e.target.value); database.ref(`pages/${dateKey}/gratitude`).set(e.target.value); }}
+              onChange={e => { setGratitude(e.target.value); database.ref(`pages/${dateKey}/gratitude`).set(e.target.value).catch(err => console.error('DB write failed (gratitude):', err)); }}
               style={{ borderColor: highlightColor }} />
           </div>
         </div>
@@ -160,7 +160,7 @@
       const prevMonth = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
       const nextMonth = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
       const goToday = () => setSelectedDate(new Date());
-      const changeColor = c => database.ref(`pages/${dateKey}/color`).set(c);
+      const changeColor = c => database.ref(`pages/${dateKey}/color`).set(c).catch(err => console.error('DB write failed (color):', err));
 
       const year = selectedDate.getFullYear();
       const month = selectedDate.getMonth();
@@ -180,7 +180,7 @@
               <button onClick={nextMonth} style={{ background:'#fff', border:'none', cursor:'pointer' }}>→</button>
             </div>
             <button className="toggle-btn" onClick={() => setView(v => v === 'daily' ? 'summary' : 'daily')}>
-              {view === 'daily' ? '📊 월간 요약' : '📖 일별 보기'}
+              {view === 'daily' ? '📊' : '📖'}
             </button>
             <div className="calendar">
               {days.map((d, i) => (
