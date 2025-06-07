@@ -28,7 +28,7 @@
     .calendar-date.has-record { background: var(--highlight-color,#888)33; }
     .calendar-date.highlight { background: var(--highlight-color,#888); color:#fff; }
 
-    .note-area, .summary-area { max-width:42rem; background:#fff; border-radius:0.5rem;
+    .note-area { max-width:42rem; background:#fff; border-radius:0.5rem;
       box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1.5rem; margin:0 auto; }
     .section { margin-bottom:1rem; }
     .section h2 { font-size:1.25rem; margin-bottom:0.5rem; }
@@ -43,7 +43,12 @@
       background:transparent; cursor:pointer; transition:border-color 0.2s, background 0.2s;
     }
 
-    /* DiscordBotWidget 스타일은 인라인으로 처리합니다. */
+    .export-region { /* Export 대상만 캡처 */
+      font-family: inherit; /* 폰트 선택 반영 */
+    }
+    .export-header { text-align:center; margin-bottom:1rem; }
+    .export-header p { margin:0.25rem 0; font-weight:bold; }
+    /* Export 버튼·설정 UI는 .export-region 밖에 있어 이미지에 포함되지 않습니다 */
   </style>
 </head>
 <body>
@@ -57,7 +62,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script type="text/babel">
-    // Firebase 초기화
+    // Firebase 초기화 :contentReference[oaicite:2]{index=2}
     const firebaseConfig = {
       apiKey: "AIzaSyBbM_NytZTqJSTPU74A9qYSskQ0GgXWtgw",
       authDomain: "nagi-daily.firebaseapp.com",
@@ -70,8 +75,6 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 감정 선택기
     function MoodTracker({ dateKey, highlightColor }) {
       const [mood, setMood] = React.useState('');
       React.useEffect(() => {
@@ -79,7 +82,6 @@
         const off = ref.on('value', snap => setMood(snap.val() || ''));
         return () => ref.off('value', off);
       }, [dateKey]);
-
       const labels = { happy:'😻', neutral:'😺', sad:'😿', angry:'😾', excited:'✨' };
       return (
         <div className="mood-tracker">
@@ -103,8 +105,7 @@
       );
     }
 
-    // 모닝/감사 일기 영역
-    function NoteArea({ dateKey, highlightColor, onColorChange }) {
+    function NoteArea({ dateKey, selectedDate, highlightColor, onColorChange }) {
       const [morning, setMorning] = React.useState('');
       const [gratitude, setGratitude] = React.useState('');
       const [editMorning, setEditMorning] = React.useState(false);
@@ -116,19 +117,17 @@
         const gRef = database.ref(`pages/${dateKey}/gratitude`);
         mRef.on('value', snap => {
           const v = snap.val() || '';
-          setMorning(v);
-          setEditMorning(v === '');
+          setMorning(v); setEditMorning(v === '');
         });
         gRef.on('value', snap => {
           const v = snap.val() || '';
-          setGratitude(v);
-          setEditGratitude(v === '');
+          setGratitude(v); setEditGratitude(v === '');
         });
         return () => { mRef.off(); gRef.off(); };
       }, [dateKey]);
 
       const handleKeyDown = (e, text, setFn, path, setEdit) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key==='Enter' && !e.shiftKey) {
           e.preventDefault();
           database.ref(path).set(text);
           setEdit(false);
@@ -136,7 +135,9 @@
       };
 
       const exportImage = async () => {
-        const el = document.querySelector('.note-area');
+        // 폰트 로드 대기
+        await document.fonts.ready;
+        const el = document.querySelector('.export-region');
         const canvas = await html2canvas(el, { backgroundColor:'#fff', scale:2 });
         canvas.toBlob(blob => {
           const a = document.createElement('a');
@@ -146,59 +147,68 @@
         });
       };
 
+      // 날짜/요일 표시 문자열 (기본: YYYY-MM-DD (Sat))
+      const y = selectedDate.getFullYear(),
+            m = String(selectedDate.getMonth()+1).padStart(2,'0'),
+            d = String(selectedDate.getDate()).padStart(2,'0'),
+            wd = selectedDate.toLocaleDateString('en-US',{weekday:'short'});
+      const displayDate = `${y}-${m}-${d} (${wd})`;
+
       return (
-        <div className="note-area">
-          <select className="font-select" value={font} onChange={e => setFont(e.target.value)}>
+        <div className="note-area" style={{ fontFamily: font }}>
+          {/* 설정 UI */}
+          <select className="font-select" value={font} onChange={e=>setFont(e.target.value)}>
             <option value="HJSS">HJSS</option>
             <option value="ywoo">ywoo</option>
             <option value="bbang">bbang</option>
             <option value="caa">caa</option>
           </select>
           <input type="color" className="color-picker" value={highlightColor}
-            onChange={e => onColorChange(e.target.value)} />
+            onChange={e=>onColorChange(e.target.value)} />
 
-          <div className="section">
-            <h2 style={{ color: highlightColor }}>ᴍᴏʀɴɪɴɢ</h2>
-            {editMorning
-              ? <textarea rows={4} value={morning}
-                  onChange={e => setMorning(e.target.value)}
-                  onKeyDown={e =>
-                    handleKeyDown(
-                      e, morning, setMorning,
-                      `pages/${dateKey}/morning`,
-                      setEditMorning
-                    )}
-                  style={{ borderColor: highlightColor }}
-                  placeholder="모닝페이지를 입력하세요" />
-              : <div className="saved-text" style={{ fontFamily: font, cursor:'pointer' }}
-                  onDoubleClick={() => setEditMorning(true)}>
-                  {morning.split('\n').map((line,i) => <p key={i}>{line}</p>)}
-                </div>
-            }
+          {/* Export 대상 영역 */}
+          <div className="export-region">
+            <div className="export-header">
+              <p>{displayDate}</p>
+            </div>
+            <div className="section">
+              <h2 style={{ color: highlightColor }}>ᴍᴏʀɴɪɴɢ</h2>
+              {editMorning
+                ? <textarea rows={4} value={morning}
+                    onChange={e=>setMorning(e.target.value)}
+                    onKeyDown={e=>
+                      handleKeyDown(e, morning, setMorning,
+                                    `pages/${dateKey}/morning`,
+                                    setEditMorning)}
+                    style={{ borderColor: highlightColor }}
+                    placeholder="모닝페이지를 입력하세요" />
+                : <div className="saved-text" style={{ cursor:'pointer' }}
+                    onDoubleClick={()=>setEditMorning(true)}>
+                    {morning.split('\n').map((line,i)=><p key={i}>{line}</p>)}
+                  </div>
+              }
+            </div>
+            <MoodTracker dateKey={dateKey} highlightColor={highlightColor} />
+            <div className="section">
+              <h2 style={{ color: highlightColor }}>ᴇᴠᴇɴɪɴɢ</h2>
+              {editGratitude
+                ? <textarea rows={4} value={gratitude}
+                    onChange={e=>setGratitude(e.target.value)}
+                    onKeyDown={e=>
+                      handleKeyDown(e, gratitude, setGratitude,
+                                    `pages/${dateKey}/gratitude`,
+                                    setEditGratitude)}
+                    style={{ borderColor: highlightColor }}
+                    placeholder="감사일기를 입력하세요" />
+                : <div className="saved-text" style={{ cursor:'pointer' }}
+                    onDoubleClick={()=>setEditGratitude(true)}>
+                    {gratitude.split('\n').map((line,i)=><p key={i}>{line}</p>)}
+                  </div>
+              }
+            </div>
           </div>
 
-          <MoodTracker dateKey={dateKey} highlightColor={highlightColor} />
-
-          <div className="section">
-            <h2 style={{ color: highlightColor }}>ᴇᴠᴇɴɪɴɢ</h2>
-            {editGratitude
-              ? <textarea rows={4} value={gratitude}
-                  onChange={e => setGratitude(e.target.value)}
-                  onKeyDown={e =>
-                    handleKeyDown(
-                      e, gratitude, setGratitude,
-                      `pages/${dateKey}/gratitude`,
-                      setEditGratitude
-                    )}
-                  style={{ borderColor: highlightColor }}
-                  placeholder="감사일기를 입력하세요" />
-              : <div className="saved-text" style={{ fontFamily: font, cursor:'pointer' }}
-                  onDoubleClick={() => setEditGratitude(true)}>
-                  {gratitude.split('\n').map((line,i) => <p key={i}>{line}</p>)}
-                </div>
-            }
-          </div>
-
+          {/* 이미지 내보내기 */}
           <button onClick={exportImage}
             style={{
               marginTop:'1rem', padding:'.5rem',
@@ -212,197 +222,162 @@
       );
     }
 
-    // 월별 요약
     function MonthlySummary({ year, month }) {
       const [counts, setCounts] = React.useState(null);
       React.useEffect(() => {
         database.ref('pages').once('value', snap => {
-          const data = snap.val() || {};
-          const mc = { happy:0, neutral:0, sad:0, angry:0, excited:0 };
-          Object.entries(data).forEach(([day,val]) => {
-            const dt = new Date(day);
-            if (dt.getFullYear()===year && dt.getMonth()===month && val.mood) {
-              mc[val.mood] = (mc[val.mood]||0) + 1;
+          const data = snap.val()||{};
+          const mc={happy:0,neutral:0,sad:0,angry:0,excited:0};
+          Object.entries(data).forEach(([day,val])=>{
+            const dt=new Date(day);
+            if(dt.getFullYear()===year && dt.getMonth()===month && val.mood){
+              mc[val.mood]=(mc[val.mood]||0)+1;
             }
           });
           setCounts(mc);
         });
-      }, [year,month]);
-
-      if (!counts) return <div className="summary-area"><p>로딩 중…</p></div>;
-      const labels = { happy:'😻', neutral:'😺', sad:'😿', angry:'😾', excited:'✨' };
+      },[year,month]);
+      if(!counts) return <div className="summary-area"><p>로딩 중…</p></div>;
+      const labels={happy:'😻',neutral:'😺',sad:'😿',angry:'😾',excited:'✨'};
       return (
         <div className="summary-area">
-          {Object.entries(labels).map(([key,emoji]) => (
-            <p key={key}>{emoji} : {counts[key]||0}</p>
+          {Object.entries(labels).map(([k,emoji])=>(
+            <p key={k}>{emoji} : {counts[k]||0}</p>
           ))}
         </div>
       );
     }
 
-    // DiscordBotWidget 추가
     function DiscordBotWidget() {
-      const [isVisible, setIsVisible] = React.useState(false);
-      const [lastMessage, setLastMessage] = React.useState('');
-      const [isOnline, setIsOnline] = React.useState(false);
-
-      const isFocusTime = () => {
-        const now = new Date();
-        const day = now.getDay();
-        const hour = now.getHours();
-        const focusRanges = {
-          1: [6, 13],
-          2: [6, 18],
-          3: [6, 13],
-          4: [6, 18],
-          5: [6, 21],
-        };
-        const range = focusRanges[day];
-        return range && hour >= range[0] && hour < range[1];
+      const [isVisible,setIsVisible]=React.useState(false);
+      const [lastMessage,setLastMessage]=React.useState('');
+      const [isOnline,setIsOnline]=React.useState(false);
+      const isFocusTime=()=>{
+        const now=new Date(),day=now.getDay(),hour=now.getHours();
+        const ranges={1:[6,13],2:[6,18],3:[6,13],4:[6,18],5:[6,21]};
+        const r=ranges[day]; return r&&hour>=r[0]&&hour<r[1];
       };
-
-      React.useEffect(() => {
-        const updateStatus = async () => {
-          const online = isFocusTime();
-          setIsOnline(online);
-          if (online) {
-            try {
-              const res = await fetch("https://raw.githubusercontent.com/nagi-00/nagi-todo/main/demian_focus_messages.json");
-              const data = await res.json();
-              const random = data.messages[Math.floor(Math.random() * data.messages.length)];
-              setLastMessage(random);
-            } catch {
-              setLastMessage("메시지를 불러오지 못했어.");
-            }
+      React.useEffect(()=>{
+        const updateStatus=async()=>{
+          const online=isFocusTime(); setIsOnline(online);
+          if(online){
+            try{
+              const res=await fetch("https://raw.githubusercontent.com/nagi-00/nagi-todo/main/demian_focus_messages.json");
+              const data=await res.json();
+              setLastMessage(data.messages[Math.floor(Math.random()*data.messages.length)]);
+            }catch{setLastMessage("메시지를 불러오지 못했어.");}
           }
         };
-        updateStatus();
-        const timer = setInterval(updateStatus, 60000);
-        return () => clearInterval(timer);
-      }, []);
-
-      return (
-        <>
-          <div onClick={() => setIsVisible(!isVisible)} style={{
-            position: 'fixed', bottom: '20px', right: '20px', width: '60px', height: '60px',
-            borderRadius: '50%', background: isOnline ? '#CECECE' : '#ccc', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1000
+        updateStatus(); const timer=setInterval(updateStatus,60000);
+        return()=>clearInterval(timer);
+      },[]);
+      return(<>
+        <div onClick={()=>setIsVisible(v=>!v)} style={{
+          position:'fixed',bottom:'20px',right:'20px',width:'60px',height:'60px',
+          borderRadius:'50%',background:isOnline?'#CECECE':'#ccc',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          cursor:'pointer',zIndex:1000
+        }}>
+          <span style={{fontSize:'24px',color:'#fff'}}>🖤</span>
+        </div>
+        {isVisible&&(
+          <div style={{
+            position:'fixed',bottom:'100px',right:'20px',width:'300px',
+            background:'#fff',borderRadius:'15px',padding:'20px',
+            boxShadow:'0 8px 25px rgba(0,0,0,0.15)',zIndex:999
           }}>
-            <span style={{ fontSize: '24px', color: '#fff' }}>🖤</span>
+            {isOnline?(
+              <>
+                <div style={{fontWeight:'bold',fontSize:'15px',marginBottom:'0.5rem'}}>ᴅᴇᴍɪᴀɴ</div>
+                <div style={{fontSize:'14px',color:'#333'}}>{lastMessage}</div>
+              </>
+            ):(
+              <>
+                <div style={{textAlign:'center',color:'#888',fontSize:'14px'}}>😴 휴식의 시간이야.</div>
+                <div style={{fontSize:'12px',marginTop:'8px',textAlign:'center'}}>
+                  𝗙𝗼𝗰𝘂𝘀 𝗧𝗶𝗺𝗲<br/>
+                  M (06-13)<br/>T (06-18)<br/>W (06-13)<br/>T (06-18)<br/>F (06-21)<br/>
+                </div>
+              </>
+            )}
           </div>
-          {isVisible && (
-            <div style={{
-              position: 'fixed', bottom: '100px', right: '20px', width: '300px',
-              background: '#fff', borderRadius: '15px', padding: '20px',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.15)', zIndex: 999
-            }}>
-              {isOnline ? (
-                <>
-                  <div style={{ fontWeight: 'bold', fontSize: '15px', marginBottom: '0.5rem' }}>ᴅᴇᴍɪᴀɴ</div>
-                  <div style={{ fontSize: '14px', color: '#333' }}>{lastMessage}</div>
-                </>
-              ) : (
-                <>
-                  <div style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
-                    😴 휴식의 시간이야.
-                  </div>
-                  <div style={{ fontSize: '12px', marginTop: '8px', textAlign: 'center' }}>
-                    𝗙𝗼𝗰𝘂𝘀 𝗧𝗶𝗺𝗲 <br/>
-                    M (06-13)<br/>
-                    T (06-18)<br/>
-                    W (06-13)<br/>
-                    T (06-18)<br/>
-                    F (06-21)<br/>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </>
-      );
+        )}
+      </>);
     }
 
-    // 메인 앱
     function App() {
-      const [view, setView] = React.useState('daily');
-      const [selectedDate, setSelectedDate] = React.useState(new Date());
-      const [allPages, setAllPages] = React.useState({});
-      const [highlightColor, setHighlightColor] = React.useState('#888888');
+      const [view,setView]=React.useState('daily');
+      const [selectedDate,setSelectedDate]=React.useState(new Date());
+      const [allPages,setAllPages]=React.useState({});
+      const [highlightColor,setHighlightColor]=React.useState('#888888');
 
-      React.useEffect(() => {
-        const ref = database.ref('pages');
-        ref.on('value', snap => setAllPages(snap.val() || {}));
-        return () => ref.off();
-      }, []);
+      React.useEffect(()=>{
+        const ref=database.ref('pages');
+        ref.on('value',snap=>setAllPages(snap.val()||{}));
+        return()=>ref.off();
+      },[]);
 
-      const dateKey = selectedDate.toLocaleDateString('sv-SE');
+      const dateKey=selectedDate.toLocaleDateString('sv-SE');
 
-      React.useEffect(() => {
-        const cref = database.ref(`pages/${dateKey}/color`);
-        const off = cref.on('value', snap => setHighlightColor(snap.val() || '#888888'));
-        return () => cref.off('value', off);
-      }, [dateKey]);
+      React.useEffect(()=>{
+        const cref=database.ref(`pages/${dateKey}/color`);
+        const off=cref.on('value',snap=>setHighlightColor(snap.val()||'#888888'));
+        return()=>cref.off('value',off);
+      },[dateKey]);
 
-      const prev  = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1));
-      const next  = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1));
-      const today = () => setSelectedDate(new Date());
+      const prev=()=>setSelectedDate(d=>new Date(d.getFullYear(),d.getMonth()-1,1));
+      const next=()=>setSelectedDate(d=>new Date(d.getFullYear(),d.getMonth()+1,1));
+      const today=()=>setSelectedDate(new Date());
 
-      const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth();
-      const firstDay = new Date(year, month, 1).getDay();
-      const dayCount = new Date(year, month+1, 0).getDate();
-      const weekdays = ['S','M','T','W','T','F','S'];
+      const year=selectedDate.getFullYear();
+      const month=selectedDate.getMonth();
+      const firstDay=new Date(year,month,1).getDay();
+      const dayCount=new Date(year,month+1,0).getDate();
+      const weekdays=['S','M','T','W','T','F','S'];
 
-      return (
-        <>
-          <div style={{ display:'flex' }}>
-            <div className="sidebar">
-              <h2 style={{ textAlign:'center', whiteSpace:'pre-line', marginBottom:'1rem' }}>
-                {year}{'\n'}{selectedDate.toLocaleDateString('en-US',{month:'long'})}
-              </h2>
-              <div className="nav-btns">
-                <button onClick={prev}>←</button>
-                <button onClick={today}>Today</button>
-                <button onClick={next}>→</button>
-              </div>
-              <button className="toggle-btn"
-                onClick={() => setView(v => v==='daily' ? 'monthly' : 'daily')}>
-                {view==='daily' ? '🇲 🇴 🇳 🇴 🇭 🇴 🇾' : '🇷 🇪 🇹 🇺 🇷 🇳'}
-              </button>
-              <div className="calendar" style={{ '--highlight-color': highlightColor }}>
-                {weekdays.map((d,i) =>
-                  <div key={i} className="calendar-day"
-                    style={{ color: i===0? '#8A4545' : i===6? '#434A8E' : '#666' }}>
-                    {d}
-                  </div>
-                )}
-                {Array(firstDay).fill().map((_,i) => <div key={`e${i}`}/>)} 
-                {Array.from({ length: dayCount }).map((_,i) => {
-                  const dt = new Date(year,month,i+1);
-                  const key = dt.toLocaleDateString('sv-SE');
-                  const sel = key===dateKey;
-                  const rec = Boolean(allPages[key]);
-                  const cls = ['calendar-date', sel?'highlight':'', !sel&&rec?'has-record':'' ].join(' ');
-                  return (
-                    <button key={i} className={cls}
-                      onClick={() => { setSelectedDate(dt); setView('daily'); }}>
-                      {i+1}
-                    </button>
-                  );
-                })}
-              </div>
+      return(<>
+        <div style={{display:'flex'}}>
+          <div className="sidebar">
+            <h2 style={{textAlign:'center',whiteSpace:'pre-line',marginBottom:'1rem'}}>
+              {year}{'\n'}{selectedDate.toLocaleDateString('en-US',{month:'long'})}
+            </h2>
+            <div className="nav-btns">
+              <button onClick={prev}>←</button>
+              <button onClick={today}>Today</button>
+              <button onClick={next}>→</button>
             </div>
-            <div className="main">
-              {view==='daily'
-                ? <NoteArea dateKey={dateKey} highlightColor={highlightColor}
-                    onColorChange={c => database.ref(`pages/${dateKey}/color`).set(c)} />
-                : <MonthlySummary year={year} month={month} />
-              }
+            <button className="toggle-btn"
+              onClick={()=>setView(v=>v==='daily'?'monthly':'daily')}>
+              {view==='daily'?'🇲 🇴 🇳 🇹 🇭 🇱 🇾':'🇷 🇪 🇹 🇺 🇷 🇳'}
+            </button>
+            <div className="calendar" style={{'--highlight-color':highlightColor}}>
+              {weekdays.map((d,i)=><div key={i} className="calendar-day"
+                style={{color:i===0?'#8A4545':i===6?'#434A8E':'#666'}}>{d}</div>)}
+              {Array(firstDay).fill().map((_,i)=><div key={i}/>)}
+              {Array.from({length:dayCount}).map((_,i)=>{
+                const dt=new Date(year,month,i+1);
+                const key=dt.toLocaleDateString('sv-SE');
+                const sel=key===dateKey, rec=Boolean(allPages[key]);
+                const cls=['calendar-date',sel?'highlight':'',!sel&&rec?'has-record':''].join('');
+                return(<button key={i} className={cls}
+                  onClick={()=>{setSelectedDate(dt);setView('daily');}}>{i+1}</button>);
+              })}
             </div>
           </div>
-          <DiscordBotWidget />
-        </>
-      );
+          <div className="main">
+            {view==='daily'
+              ? <NoteArea
+                  dateKey={dateKey}
+                  selectedDate={selectedDate}
+                  highlightColor={highlightColor}
+                  onColorChange={c=>database.ref(`pages/${dateKey}/color`).set(c)}
+                />
+              : <MonthlySummary year={year} month={month} />
+            }
+          </div>
+        </div>
+        <DiscordBotWidget />
+      </>);  
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
