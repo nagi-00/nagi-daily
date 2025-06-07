@@ -11,52 +11,34 @@
     @font-face { font-family:'caa'; src:url('./caa.ttf') format('truetype'); }
     body { margin:0; padding:0; font-family:'HJSS',sans-serif; background:#f5f5f5; }
 
-    /* 사이드바 & 메인 레이아웃 */
     .sidebar { position:fixed; left:0; top:0; bottom:0; width:16rem; background:#fff; overflow:auto;
       box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1rem; }
     .main { margin-left:16rem; padding:1rem; display:flex; justify-content:center; }
 
-    /* 네비게이션 버튼 */
     .nav-btns { display:flex; justify-content:center; gap:0.5rem; margin:0.5rem 0;
       white-space: nowrap; }
     .nav-btns button { background:#fff; border:none; padding:0.5rem 1rem; cursor:pointer; }
 
-    /* 토글 버튼 */
     .toggle-btn { margin:1rem 0; width:100%; padding:0.5rem; border:none; background:#fff;
       cursor:pointer; font-weight:bold; border-radius:0.25rem; white-space: nowrap; }
 
-    /* 달력 */
     .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:0.25rem; font-size:0.875rem; }
     .calendar-day { text-align:center; font-weight:500; }
     .calendar-date { position:relative; width:1.8rem; height:1.8rem; display:flex;
       align-items:center; justify-content:center; background:#fff; border:none;
       border-radius:9999px; cursor:pointer; transition: background 0.2s; }
-    .calendar-date.has-record { /* 기록 있는 날 반투명 음영 */
+    .calendar-date.has-record {
       background: var(--highlight-color,#888)33;
     }
-    .calendar-date.highlight { /* 선택된 날 full 컬러 */
+    .calendar-date.highlight {
       background: var(--highlight-color,#888);
       color:#fff;
     }
-
-    /* 노트 & 요약 영역 */
-    .note-area, .summary-area { max-width:42rem; background:#fff; border-radius:0.5rem;
-      box-shadow:0 2px 5px rgba(0,0,0,0.1); padding:1.5rem; }
-    .section { margin-bottom:1rem; }
-    .section h2 { font-size:1.25rem; margin-bottom:0.5rem; }
-    textarea { width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:0.25rem; resize:vertical; }
-    .color-picker { width:1.5rem; height:1.5rem; border:none; cursor:pointer; margin-bottom:1rem; }
-    .mood-tracker { display:flex; gap:0.5rem; margin-bottom:1rem; }
-    .mood-tracker button { font-size:1.5rem; padding:0.25rem; border:1px solid #ccc;
-      border-radius:0.25rem; cursor:pointer; background:transparent; }
-    .mood-tracker button.selected { border:none; }
-    .font-select { margin-bottom:1rem; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
-  <!-- React, Firebase, Babel, html2canvas ... -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -64,7 +46,19 @@
   <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-database-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="text/babel">
-    // Firebase 초기화 (기존 설정 유지)
+    // 임시 스텁: 에러 방지용. 실제 구현하길 원하는 기능을 알려주세요.
+    const NoteArea = ({ dateKey }) => (
+      <div style={{ padding:'1rem', border:'1px solid #ddd' }}>
+        NoteArea placeholder: {dateKey}
+      </div>
+    );
+    const MonthlySummary = ({ year, month }) => (
+      <div style={{ padding:'1rem', border:'1px solid #ddd' }}>
+        MonthlySummary placeholder: {year}-{month+1}
+      </div>
+    );
+
+    // Firebase 초기화
     const firebaseConfig = {
       apiKey: "...",
       authDomain: "...",
@@ -100,16 +94,12 @@
       const next  = () => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1));
       const today = () => setSelectedDate(new Date());
 
-      const changeColor = c => database.ref(`pages/${dateKey}/color`).set(c);
-
-      // 달력 계산
       const y  = selectedDate.getFullYear();
       const m  = selectedDate.getMonth();
       const fd = new Date(y, m, 1).getDay();
       const td = new Date(y, m+1, 0).getDate();
       const days = ['S','M','T','W','T','F','S'];
 
-      // 버튼 레이블
       const toggleLabel = view === 'daily'
         ? '🇲 🇴 🇳 🇴 🇭 🇱 🇾'
         : '🇷 🇪 🇹 🇺 🇷 🇳';
@@ -120,18 +110,15 @@
             <h2 style={{ textAlign:'center', whiteSpace:'pre-line', marginBottom:'1rem' }}>
               {y}{'\n'}{selectedDate.toLocaleDateString('en-US',{month:'long'})}
             </h2>
-
             <div className="nav-btns">
               <button onClick={prev}>←</button>
               <button onClick={today}>Today</button>
               <button onClick={next}>→</button>
             </div>
-
             <button className="toggle-btn"
               onClick={() => setView(v => v === 'daily' ? 'monthly' : 'daily')}>
               {toggleLabel}
             </button>
-
             <div className="calendar" style={{ '--highlight-color': dateColor }}>
               {days.map((d,i) =>
                 <div key={i} className="calendar-day"
@@ -139,11 +126,7 @@
                   {d}
                 </div>
               )}
-
-              {Array(fd).fill().map((_,i)=>
-                <div key={`e${i}`}/>
-              )}
-
+              {Array(fd).fill().map((_,i)=><div key={`e${i}`}/>)}
               {Array.from({ length: td }).map((_,i) => {
                 const dt = new Date(y,m,i+1);
                 const k  = dt.toLocaleDateString('sv-SE');
@@ -164,10 +147,9 @@
               })}
             </div>
           </div>
-
           <div className="main">
             {view === 'daily'
-              ? <NoteArea dateKey={dateKey} highlightColor={dateColor} onColorChange={changeColor}/>
+              ? <NoteArea dateKey={dateKey} highlightColor={dateColor} onColorChange={c=>database.ref(`pages/${dateKey}/color`).set(c)}/>
               : <MonthlySummary year={y} month={m}/>
             }
           </div>
